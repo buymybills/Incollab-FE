@@ -1,8 +1,8 @@
 "use client"
-import { ChevronLeft, Edit2, ImageIcon, X, Upload } from 'lucide-react'
-import Image from 'next/image'
-import React, { useRef, useState, useEffect } from 'react'
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
+import { ChevronLeft, Edit2, ImageIcon, Upload, X } from 'lucide-react'
+import Image from 'next/image'
+import React, { useEffect, useRef, useState } from 'react'
 
 const VerifyInfluencerPage = () => {
   const bannerInputRef = useRef<HTMLInputElement>(null)
@@ -13,7 +13,7 @@ const VerifyInfluencerPage = () => {
   const [country, setCountry] = useState<string>('')
   const [city, setCity] = useState<string>('')
   const [bio, setBio] = useState<string>('')
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [whatsappNumber, setWhatsappNumber] = useState<string>('')
   const [countryCode, setCountryCode] = useState<string>('+91')
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
@@ -42,7 +42,9 @@ const VerifyInfluencerPage = () => {
       thread: ''
     }
   })
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram'])
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [socialLinks, setSocialLinks] = useState<{[key: string]: string}>({})
+  const [collaborationPlatforms, setCollaborationPlatforms] = useState<string[]>(['instagram'])
   const inputsRef = useRef<HTMLInputElement[]>([])
 
   useEffect(() => {
@@ -170,19 +172,69 @@ const VerifyInfluencerPage = () => {
     setCurrentStep(4)
   }
 
+  const handleContinueToStep5 = () => {
+    setCurrentStep(5)
+  }
+
+  const handleBackToStep4 = () => {
+    setCurrentStep(4)
+  }
+
   const handleBackToStep3 = () => {
     setCurrentStep(3)
   }
 
   const handlePlatformToggle = (platform: string) => {
-    if (platform === 'instagram') return // Instagram is always included
-
-    setSelectedPlatforms(prev =>
-      prev.includes(platform)
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
-    )
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platform)) {
+        // Remove platform and its social link
+        const newPlatforms = prev.filter(p => p !== platform)
+        setSocialLinks(prevLinks => {
+          const newLinks = { ...prevLinks }
+          delete newLinks[platform]
+          return newLinks
+        })
+        return newPlatforms
+      } else {
+        // Add platform and initialize empty social link
+        setSocialLinks(prevLinks => ({
+          ...prevLinks,
+          [platform]: ''
+        }))
+        return [...prev, platform]
+      }
+    })
   }
+
+  const handleSocialLinkChange = (platform: string, value: string) => {
+    setSocialLinks(prev => ({
+      ...prev,
+      [platform]: value
+    }))
+  }
+
+  const handleRemovePlatform = (platform: string) => {
+    setSelectedPlatforms(prev => prev.filter(p => p !== platform))
+    setSocialLinks(prev => {
+      const newLinks = { ...prev }
+      delete newLinks[platform]
+      return newLinks
+    })
+  }
+
+  const handleCollaborationPlatformToggle = (platform: string) => {
+    setCollaborationPlatforms(prev => {
+      if (prev.includes(platform)) {
+        // Don't remove Instagram as it's required by default
+        if (platform === 'instagram') return prev
+        return prev.filter(p => p !== platform)
+      } else {
+        return [...prev, platform]
+      }
+    })
+  }
+
+  console.log(selectedPlatforms)
 
   const handleCollaborationCostChange = (platform: string, type: string, value: string) => {
     setCollaborationCosts(prev => ({
@@ -193,22 +245,29 @@ const VerifyInfluencerPage = () => {
       }
     }))
   }
+
   const renderStep1 = () => (
     <>
-        <div className="flex flex-col items-center py-16 px-4 pb-32 space-y-12">
-            <div className="text-center">
-                <div className="relative mb-4 flex items-center justify-center">
-                    <div className='rounded-full w-32 h-32 relative overflow-hidden'>
-                        <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
-                    </div>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-10">
-                        <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
-                    </div>
+        <div className="text-center">
+            <div className="relative mb-4 flex items-center justify-center mt-10">
+                <div className='rounded-full w-32 h-32 relative overflow-hidden'>
+                    <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
                 </div>
-                <h2 className="text-xl font-bold text-black">Add verification Badge</h2>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-32">
+                    <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
+                </div>
             </div>
-
-            <div className="w-full max-w-sm space-y-8">
+            <h2 className="text-xl font-bold text-black">Add verification Badge</h2>
+        </div>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep2}/>
+        </div>
+    </>
+  )
+  const renderStep2 = () => (
+    <>
+        <div className="flex flex-col items-center mt-10 px-4 pb-32 space-y-12">
+            <div className="w-full max-w-sm">
                 <div>
                     <h3 className="text-lg font-semibold text-black mb-4">Add Profile Banner*</h3>
                     {bannerImage ? (
@@ -262,7 +321,7 @@ const VerifyInfluencerPage = () => {
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Add Profile Image*</h3>
+                    <h3 className="text-lg font-semibold text-black mb-3 mt-6">Add Profile Image*</h3>
                     <div className="flex justify-center">
                         <div className="relative">
                             {profileImage ? (
@@ -325,7 +384,7 @@ const VerifyInfluencerPage = () => {
 
                 {/* Profile Headline Section */}
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Add Profile headline</h3>
+                    <h3 className="text-lg font-semibold text-black mb-3 mt-6">Add Profile headline</h3>
                     <div className="relative">
                         <textarea
                             value={profileHeadline}
@@ -342,7 +401,7 @@ const VerifyInfluencerPage = () => {
 
                 {/* Location Section */}
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Location</h3>
+                    <h3 className="text-lg font-semibold text-black mb-3 mt-6">Location</h3>
                     <div className="space-y-3">
                         <div className="relative">
                             <select
@@ -387,7 +446,7 @@ const VerifyInfluencerPage = () => {
 
                 {/* Bio Section */}
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Tell Other About Your Self</h3>
+                    <h3 className="text-lg font-semibold text-black mb-3 mt-6">Tell Other About Your Self</h3>
                     <div className="relative">
                         <textarea
                             value={bio}
@@ -402,57 +461,99 @@ const VerifyInfluencerPage = () => {
                     </div>
                 </div>
 
-                {/* social link inputs */}
-                <div>
-                    
-                </div>
-
                 {/* Social Links Section */}
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Add Social Link</h3>
-                    <div className="flex gap-4 justify-center">
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/instagram.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/youtube.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/linkedin.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/x-social.svg" alt="Facebook" width={32} height={32} />
-                        </button>
+                    <h3 className="text-lg font-semibold text-black mb-4 mt-6">Add Social Link</h3>
+
+                    {/* Selected Platform Links */}
+                    {selectedPlatforms.length > 0 && (
+                        <div className="space-y-3 mb-6">
+                            {selectedPlatforms.map((platform) => (
+                                <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg relative" key={platform}>
+                                    <div className="flex items-center gap-3">
+                                        <Image src={`/images/icons/${platform}.svg`} alt={platform} width={24} height={24} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="https://..."
+                                        value={socialLinks[platform] || ''}
+                                        onChange={(e) => handleSocialLinkChange(platform, e.target.value)}
+                                        className="text-[#999] bg-transparent outline-none flex-1"
+                                    />
+                                    <button
+                                        onClick={() => handleRemovePlatform(platform)}
+                                        className='bg-[#999] rounded-full w-5 h-5 flex items-center justify-center ml-2'
+                                    >
+                                        <X className='text-white' size={12}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Add More Links Section */}
+                    <div>
+                        {selectedPlatforms.length > 0 && (
+                            <div className="flex items-center justify-center gap-x-2.5 mb-4">
+                                <div className='w-10 h-0.5 bg-gradient-to-r from-white to-[#222]'/>
+                                <span className="text-xs font-bold text-black tracking-wider">ADD MORE LINKS</span>
+                                <div className='w-10 h-0.5 bg-gradient-to-r from-[#222] to-white'/>
+                            </div>
+                        )}
+                        <div className="flex gap-4 justify-center">
+                            {!selectedPlatforms.includes('facebook') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('facebook')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('instagram') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('instagram')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/instagram.svg" alt="Instagram" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('youtube') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('youtube')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/youtube.svg" alt="YouTube" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('linkedin') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('linkedin')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/linkedin.svg" alt="LinkedIn" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('x-social') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('x-social')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/x-social.svg" alt="X" width={32} height={32} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep2}/>
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep3}/>
         </div>
     </>
   )
 
-  const renderStep2 = () => (
+  const renderStep3 = () => (
     <>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
             <div className="text-left">
@@ -512,7 +613,7 @@ const VerifyInfluencerPage = () => {
                 </div>
 
                 {/* Additional Platforms */}
-                {selectedPlatforms.includes('facebook') && (
+                {collaborationPlatforms.includes('facebook') && (
                     <div>
                         <h3 className="text-lg font-semibold text-black mb-2">Facebook</h3>
                         <div className="space-y-3">
@@ -548,7 +649,7 @@ const VerifyInfluencerPage = () => {
                     </div>
                 )}
 
-                {selectedPlatforms.includes('youtube') && (
+                {collaborationPlatforms.includes('youtube') && (
                     <div>
                         <h3 className="text-lg font-semibold text-black mb-2">YouTube</h3>
                         <div className="space-y-3">
@@ -584,7 +685,7 @@ const VerifyInfluencerPage = () => {
                     </div>
                 )}
 
-                {selectedPlatforms.includes('linkedin') && (
+                {collaborationPlatforms.includes('linkedin') && (
                     <div>
                         <h3 className="text-lg font-semibold text-black mb-2">LinkedIn</h3>
                         <div className="space-y-3">
@@ -620,7 +721,7 @@ const VerifyInfluencerPage = () => {
                     </div>
                 )}
 
-                {selectedPlatforms.includes('twitter') && (
+                {collaborationPlatforms.includes('twitter') && (
                     <div>
                         <h3 className="text-lg font-semibold text-black mb-2">X (Twitter)</h3>
                         <div className="space-y-3">
@@ -658,62 +759,58 @@ const VerifyInfluencerPage = () => {
 
                 {/* Add More Platform Section */}
                 <div>
-                    <div className="text-center mb-4">
-                        <span className="text-sm font-medium text-gray-500 tracking-wider">ADD FOR MORE PLATFORM</span>
-                    </div>
+                    {collaborationPlatforms.length > 0 && (
+                        <div className="flex items-center justify-center gap-x-2.5 mb-4">
+                            <div className='w-10 h-0.5 bg-gradient-to-r from-white to-[#222]'/>
+                            <span className="text-xs font-bold text-black tracking-wider">ADD FOR MORE PLATFORM</span>
+                            <div className='w-10 h-0.5 bg-gradient-to-r from-[#222] to-white'/>
+                        </div>
+                    )}
                     <div className="flex gap-4 justify-center">
-                        <button
-                            onClick={() => handlePlatformToggle('facebook')}
-                            className={`h-14 w-14 rounded-xl border ${
-                                selectedPlatforms.includes('facebook')
-                                    ? 'border-theme-primary bg-blue-50'
-                                    : 'border-[#E4E4E4]'
-                            } flex items-center justify-center transition-colors`}
-                        >
-                            <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => handlePlatformToggle('youtube')}
-                            className={`h-14 w-14 rounded-xl border ${
-                                selectedPlatforms.includes('youtube')
-                                    ? 'border-theme-primary bg-blue-50'
-                                    : 'border-[#E4E4E4]'
-                            } flex items-center justify-center transition-colors`}
-                        >
-                            <Image src="/images/icons/youtube.svg" alt="YouTube" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => handlePlatformToggle('linkedin')}
-                            className={`h-14 w-14 rounded-xl border ${
-                                selectedPlatforms.includes('linkedin')
-                                    ? 'border-theme-primary bg-blue-50'
-                                    : 'border-[#E4E4E4]'
-                            } flex items-center justify-center transition-colors`}
-                        >
-                            <Image src="/images/icons/linkedin.svg" alt="LinkedIn" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => handlePlatformToggle('twitter')}
-                            className={`h-14 w-14 rounded-xl border ${
-                                selectedPlatforms.includes('twitter')
-                                    ? 'border-theme-primary bg-blue-50'
-                                    : 'border-[#E4E4E4]'
-                            } flex items-center justify-center transition-colors`}
-                        >
-                            <Image src="/images/icons/x-social.svg" alt="X" width={32} height={32} />
-                        </button>
+                        {!collaborationPlatforms.includes('facebook') && (
+                            <button
+                                onClick={() => handleCollaborationPlatformToggle('facebook')}
+                                className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                            >
+                                <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
+                            </button>
+                        )}
+                        {!collaborationPlatforms.includes('youtube') && (
+                            <button
+                                onClick={() => handleCollaborationPlatformToggle('youtube')}
+                                className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                            >
+                                <Image src="/images/icons/youtube.svg" alt="YouTube" width={32} height={32} />
+                            </button>
+                        )}
+                        {!collaborationPlatforms.includes('linkedin') && (
+                            <button
+                                onClick={() => handleCollaborationPlatformToggle('linkedin')}
+                                className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                            >
+                                <Image src="/images/icons/linkedin.svg" alt="LinkedIn" width={32} height={32} />
+                            </button>
+                        )}
+                        {!collaborationPlatforms.includes('twitter') && (
+                            <button
+                                onClick={() => handleCollaborationPlatformToggle('twitter')}
+                                className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                            >
+                                <Image src="/images/icons/x-social.svg" alt="X" width={32} height={32} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep3}/>
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep4}/>
         </div>
     </>
   )
 
-  const renderStep3 = () => (
+  const renderStep4 = () => (
     <>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
             <div className="text-left">
@@ -753,24 +850,24 @@ const VerifyInfluencerPage = () => {
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep4}/>
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep5}/>
         </div>
     </>
   )
 
-  const renderStep4 = () => (
+  const renderStep5 = () => (
     <>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
-            <div className="text-left">
+            <div className="text-center">
                 <h2 className="text-xl font-bold text-black">OTP Verification</h2>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-[#555]">
                     You have received an OTP at {countryCode}{whatsappNumber}
                 </p>
             </div>
 
             <div className="w-full max-w-sm space-y-6">
                 <div>
-                    <div className="flex gap-2 justify-center" id="otp-container">
+                    <div className="flex gap-1.5 justify-center" id="otp-container">
                         {otp.map((_, index) => (
                             <input
                                 key={index}
@@ -827,6 +924,7 @@ const VerifyInfluencerPage = () => {
                     currentStep === 2 ? handleBackToStep1 :
                     currentStep === 3 ? handleBackToStep2 :
                     currentStep === 4 ? handleBackToStep3 :
+                    currentStep === 5 ? handleBackToStep4 :
                     undefined
                 }>
                     <ChevronLeft size={20}/>
@@ -836,7 +934,11 @@ const VerifyInfluencerPage = () => {
                 </span>
             </div>
         </div>
-        {currentStep === 1 ? renderStep1() : currentStep === 2 ? renderStep2() : currentStep === 3 ? renderStep3() : renderStep4()}
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+        {currentStep === 4 && renderStep4()}
+        {currentStep === 5 && renderStep5()}
     </div>
   )
 }

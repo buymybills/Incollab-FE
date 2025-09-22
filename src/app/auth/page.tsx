@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 const AuthPage = () => {
   const router = useRouter()
   return (
-    <div className="min-h-screen py-8 flex items-center justify-center md:justify-start md:py-0 md:items-start md:px-0 px-3">
-      <div className="max-w-md md:max-w-full h-[70vh] md:h-[90vh] w-full text-center flex flex-col items-center justify-between">
-        <div className='space-y-5 md:space-y-3 md:bg-[#D9D9D9] flex-1 w-full md:flex items-center flex-col justify-end md:pb-10'>
+    <div className="min-h-screen flex items-center md:justify-start md:py-0 md:items-start md:px-0">
+      <div className="max-w-md md:max-w-full h-[100dvh] flex-1 md:h-[90vh] w-full text-center flex flex-col border border-[#E4E4E4] justify-around px-4">
+        <div className='space-y-5 md:space-y-3 md:bg-[#403c3c] w-full md:flex items-center flex-col md:pb-10'>
             <div className="space-y-2 flex items-start flex-col md:flex-row md:gap-x-2">
                 <h1 className="text-[32px] md:text-[64px] font-bold text-black tracking-tight">
                     CONNECT.

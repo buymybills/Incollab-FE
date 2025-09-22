@@ -22,7 +22,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="BuyMyBills" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className={`dark:bg-[#1B1B1B] bg-white`}
+      <body className={`bg-white`}
         suppressHydrationWarning
       >
         <MainProvider>

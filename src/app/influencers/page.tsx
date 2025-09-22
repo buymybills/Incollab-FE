@@ -1,13 +1,15 @@
+"use client"
+import BottomTab from '@/components/common/BottomTab'
 import PostCard from '@/components/influencer/PostCard'
 import TopInfluencerCard from '@/components/influencer/TopInfluencerCard'
 import AppHeader from '@/layout/AppHeader'
-import React from 'react'
 
 const InfluencerPage = () => {
+
   return (
     <div>
         <div className="header">
-            <AppHeader/>
+          <AppHeader/>
         </div>
         <div className="top-influencer px-4">
             <p className='font-bold text-black'>Top Influencers</p>
@@ -20,10 +22,11 @@ const InfluencerPage = () => {
                 <TopInfluencerCard name='sneha_s19' image="/images/user/influencer.svg"/>
             </div>
         </div>
-        <div className="post-card px-4">
+        <div className="post-card px-4 pb-24">
             <PostCard/>
             <PostCard/>
         </div>
+        <BottomTab activeTab='home' />
     </div>
   )
 }

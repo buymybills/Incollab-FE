@@ -1,11 +1,11 @@
 "use client"
-import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import BottomSheet from '@/components/bottomsheets/BottomSheet'
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Edit, Mars, Plus, Venus, X } from 'lucide-react'
+import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import { Modal } from '@/components/ui/modal'
 import { useModal } from '@/hooks/useModal'
+import { ArrowLeft, Edit, Mars, Plus, Venus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 
 const ProfilePage = () => {
   const [fullName, setFullName] = useState("")
@@ -27,9 +27,24 @@ const ProfilePage = () => {
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [showCustomNicheBottomSheet, setShowCustomNicheBottomSheet] = useState(false)
   const [customNicheInput, setCustomNicheInput] = useState("")
+  const [nicheOptions, setNicheOptions] = useState([
+    { id: "fashion", name: "Fashion", icon: "👗" },
+    { id: "movies", name: "Movies", icon: "🎬" },
+    { id: "food", name: "Food", icon: "☕" },
+    { id: "beauty", name: "Beauty", icon: "💄" },
+    { id: "electronics", name: "Electronics", icon: "🔌" },
+    { id: "pets", name: "Pets", icon: "🐾" },
+    { id: "home-decor", name: "Home Décor", icon: "🏠" },
+    { id: "automotive", name: "Automotive", icon: "🚗" },
+    { id: "sports", name: "Sports", icon: "⚽" },
+    { id: "fitness", name: "Fitness", icon: "🏋️" },
+    { id: "travel", name: "Travel", icon: "✈️" },
+    { id: "lifestyle", name: "Lifestyle", icon: "⭐" },
+    { id: "accessories", name: "Accessories", icon: "👜" }
+  ])
   const modalOpen = useModal();
   const router = useRouter();
-  
+
   const usernameSuggestions = [
     "Dhruv_09",
     "Dhruv_1109", 
@@ -49,21 +64,6 @@ const ProfilePage = () => {
     "Trans-Feminine"
   ]
 
-  const nicheOptions = [
-    { id: "fashion", name: "Fashion", icon: "👗" },
-    { id: "movies", name: "Movies", icon: "🎬" },
-    { id: "food", name: "Food", icon: "☕" },
-    { id: "beauty", name: "Beauty", icon: "💄" },
-    { id: "electronics", name: "Electronics", icon: "🔌" },
-    { id: "pets", name: "Pets", icon: "🐾" },
-    { id: "home-decor", name: "Home Décor", icon: "🏠" },
-    { id: "automotive", name: "Automotive", icon: "🚗" },
-    { id: "sports", name: "Sports", icon: "⚽" },
-    { id: "fitness", name: "Fitness", icon: "🏋️" },
-    { id: "travel", name: "Travel", icon: "✈️" },
-    { id: "lifestyle", name: "Lifestyle", icon: "⭐" },
-    { id: "accessories", name: "Accessories", icon: "👜" }
-  ]
 
   const handleOthersClick = () => {
     setShowGenderBottomSheet(true)
@@ -95,11 +95,11 @@ const ProfilePage = () => {
       setSelectedNiches(prev => [...prev, customNicheId])
 
       // Add to nicheOptions for future display
-      nicheOptions.push({
+      setNicheOptions(prev => [...prev, {
         id: customNicheId,
         name: customNicheInput.trim(),
-        icon: "🎯"
-      })
+        icon: ""
+      }])
 
       setCustomNicheInput("")
       setShowCustomNicheBottomSheet(false)
@@ -168,13 +168,14 @@ const ProfilePage = () => {
     fileInput?.click()
   }
 
-  if (currentStep === 5) {
-    return (
+  const renderMainContent = () => {
+    if (currentStep === 5) {
+      return (
       <div className="sm:flex h-screen items-center flex-col pb-4">
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4">
+        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
             <h1 className="font-bold text-black text-center">
@@ -199,7 +200,7 @@ const ProfilePage = () => {
               </div>
               
               {/* Niche Options Grid */}
-              <div className="w-full pb-4">
+              <div className="w-full pb-20">
                 <div className="flex flex-wrap gap-3 sm:justify-center">
                   {nicheOptions.map((niche) => (
                     <button
@@ -235,7 +236,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4">
+        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
             <h1 className="font-bold text-black text-center">
@@ -268,6 +269,9 @@ const ProfilePage = () => {
 
           {/* Continue Button */}
           <div className="mt-auto" onClick={nextStep}>
+            <p className="text-center font-medium text-black mb-4">
+              Skip This Step
+            </p>
             <ArrowFilledButton text="Continue" textCenter={true}/>
           </div>
         </div>
@@ -281,7 +285,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4">
+        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
             <h1 className="font-bold text-black text-center">
@@ -354,7 +358,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4">
+        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
         {/* Header with progress */}
         <div className="">
           <h1 className="font-bold text-black text-center">
@@ -680,12 +684,20 @@ const ProfilePage = () => {
           <ArrowFilledButton text="Continue" textCenter={true}/>
         </div>
       </div>
+    </div>
+    )
+  }
 
-      {/* Custom Niche Bottom Sheet */}
+  // Main render with all bottom sheets
+  return (
+    <>
+      {renderMainContent()}
+
+      {/* Custom Niche Bottom Sheet - Always rendered */}
       <BottomSheet
         isOpen={showCustomNicheBottomSheet}
         onClose={() => setShowCustomNicheBottomSheet(false)}
-        bottomSheetMaximumHeight={400}
+        bottomSheetMaximumHeight={250}
       >
         <div className="px-6 pb-6">
           <h2 className="text-xl font-bold text-black mb-6">
@@ -710,7 +722,7 @@ const ProfilePage = () => {
           </div>
         </div>
       </BottomSheet>
-    </div>
+    </>
   )
 }
 

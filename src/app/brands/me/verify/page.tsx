@@ -27,9 +27,12 @@ const VerifyBrandPage = () => {
       const incorporationInputRef = useRef<HTMLInputElement>(null)
       const gstInputRef = useRef<HTMLInputElement>(null)
       const panInputRef = useRef<HTMLInputElement>(null)
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+//   const [whatsappNumber, setWhatsappNumber] = useState<string>('')
+  const countryCode:string = '+91'
   const whatsappNumber:string = ''
-  const countryCode:string = '91'
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [socialLinks, setSocialLinks] = useState<{[key: string]: string}>({})
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [resendTimer, setResendTimer] = useState(20)
   const [canResend, setCanResend] = useState(false)
@@ -178,21 +181,74 @@ const VerifyBrandPage = () => {
     setCurrentStep(3)
   }
 
+  const handleContinueToStep5 = () => {
+    setCurrentStep(5)
+  }
+
+  const handleBackToStep4 = () => {
+    setCurrentStep(4)
+  }
+
+  const handlePlatformToggle = (platform: string) => {
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platform)) {
+        // Remove platform and its social link
+        const newPlatforms = prev.filter(p => p !== platform)
+        setSocialLinks(prevLinks => {
+          const newLinks = { ...prevLinks }
+          delete newLinks[platform]
+          return newLinks
+        })
+        return newPlatforms
+      } else {
+        // Add platform and initialize empty social link
+        setSocialLinks(prevLinks => ({
+          ...prevLinks,
+          [platform]: ''
+        }))
+        return [...prev, platform]
+      }
+    })
+  }
+
+  const handleSocialLinkChange = (platform: string, value: string) => {
+    setSocialLinks(prev => ({
+      ...prev,
+      [platform]: value
+    }))
+  }
+
+  const handleRemovePlatform = (platform: string) => {
+    setSelectedPlatforms(prev => prev.filter(p => p !== platform))
+    setSocialLinks(prev => {
+      const newLinks = { ...prev }
+      delete newLinks[platform]
+      return newLinks
+    })
+  }
+
   const renderStep1 = () => (
     <>
-        <div className="flex flex-col items-center py-16 px-4 pb-32 space-y-12">
-            <div className="text-center">
-                <div className="relative mb-4 flex items-center justify-center">
-                    <div className='rounded-full w-32 h-32 relative overflow-hidden'>
-                        <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
+        <div className="text-center">
+                    <div className="relative mb-4 flex items-center justify-center mt-10">
+                        <div className='rounded-full w-32 h-32 relative overflow-hidden'>
+                            <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
+                        </div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-32">
+                            <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
+                        </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-10">
-                        <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
-                    </div>
-                </div>
-                <h2 className="text-xl font-bold text-black">Add verification Badge</h2>
-            </div>
+                    <h2 className="text-xl font-bold text-black">Add verification Badge</h2>
+                </div>  
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep2}/>
+        </div>
+    </>
+  )
 
+  const renderStep2 = () => (
+    <>
+        <div className="flex flex-col items-center py-16 px-4 pb-32 space-y-12">
             <div className="w-full max-w-sm space-y-8">
                 <div>
                     <h3 className="text-lg font-semibold text-black mb-4">Add Profile Banner*</h3>
@@ -394,50 +450,99 @@ const VerifyBrandPage = () => {
 
                 {/* Social Links Section */}
                 <div>
-                    <h3 className="text-lg font-semibold text-black mb-4">Add Social Link</h3>
-                    <div className="flex gap-4 justify-center">
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/instagram.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/youtube.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/linkedin.svg" alt="Facebook" width={32} height={32} />
-                        </button>
-                        <button
-                            onClick={() => {/* Handle Facebook link */}}
-                            className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center"
-                        >
-                            <Image src="/images/icons/x-social.svg" alt="Facebook" width={32} height={32} />
-                        </button>
+                    <h3 className="text-lg font-semibold text-black mb-4 mt-6">Add Social Link</h3>
+
+                    {/* Selected Platform Links */}
+                    {selectedPlatforms.length > 0 && (
+                        <div className="space-y-3 mb-6">
+                            {selectedPlatforms.map((platform) => (
+                                <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg relative" key={platform}>
+                                    <div className="flex items-center gap-3">
+                                        <Image src={`/images/icons/${platform}.svg`} alt={platform} width={24} height={24} />
+                                        <span className="font-medium text-black capitalize">{platform}</span>
+                                    </div>
+                                    <hr className='w-[0.9px] h-5 bg-black'/>
+                                    <input
+                                        type="text"
+                                        placeholder="https://..."
+                                        value={socialLinks[platform] || ''}
+                                        onChange={(e) => handleSocialLinkChange(platform, e.target.value)}
+                                        className="text-[#999] bg-transparent outline-none flex-1"
+                                    />
+                                    <button
+                                        onClick={() => handleRemovePlatform(platform)}
+                                        className='bg-[#999] rounded-full w-5 h-5 flex items-center justify-center ml-2'
+                                    >
+                                        <X className='text-white' size={12}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Add More Links Section */}
+                    <div>
+                        {selectedPlatforms.length > 0 && (
+                            <div className="flex items-center justify-center gap-x-2.5 mb-4">
+                                <div className='w-10 h-0.5 bg-gradient-to-r from-white to-[#222]'/>
+                                <span className="text-xs font-bold text-black tracking-wider">ADD MORE LINKS</span>
+                                <div className='w-10 h-0.5 bg-gradient-to-r from-[#222] to-white'/>
+                            </div>
+                        )}
+                        <div className="flex gap-4 justify-center">
+                            {!selectedPlatforms.includes('facebook') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('facebook')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/facebook.svg" alt="Facebook" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('instagram') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('instagram')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/instagram.svg" alt="Instagram" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('youtube') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('youtube')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/youtube.svg" alt="YouTube" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('linkedin') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('linkedin')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/linkedin.svg" alt="LinkedIn" width={32} height={32} />
+                                </button>
+                            )}
+                            {!selectedPlatforms.includes('x-social') && (
+                                <button
+                                    onClick={() => handlePlatformToggle('x-social')}
+                                    className="h-14 w-14 rounded-xl border border-[#E4E4E4] flex items-center justify-center transition-colors"
+                                >
+                                    <Image src="/images/icons/x-social.svg" alt="X" width={32} height={32} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep2}/>
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep3}/>
         </div>
     </>
   )
 
-  const renderStep2 = () => (
+  const renderStep3 = () => (
     <>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
             <div className="w-full max-w-sm space-y-6">
@@ -556,14 +661,14 @@ const VerifyBrandPage = () => {
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep3}/>
+            <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep4}/>
         </div>
     </>
   )
 
-    const handleIncorporationUpload = () => {
-      incorporationInputRef.current?.click()
-    }
+  const handleIncorporationUpload = () => {
+    incorporationInputRef.current?.click()
+  }
   
     const handleGstUpload = () => {
       gstInputRef.current?.click()
@@ -642,7 +747,7 @@ const VerifyBrandPage = () => {
       }
     }
 
-  const renderStep3 = () => (
+  const renderStep4 = () => (
     <>
     <div className="flex flex-col py-5 px-4 pb-32 space-y-8">
         <div className="w-full max-w-sm space-y-8">
@@ -877,12 +982,12 @@ const VerifyBrandPage = () => {
     </div>
 
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-        <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep4}/>
+        <ArrowFilledButton text="Continue" textCenter={true} onClick={handleContinueToStep5}/>
     </div>
 </>
   )
 
-  const renderStep4 = () => (
+  const renderStep5 = () => (
     <>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
             <div className="text-left">
@@ -951,6 +1056,7 @@ const VerifyBrandPage = () => {
                     currentStep === 2 ? handleBackToStep1 :
                     currentStep === 3 ? handleBackToStep2 :
                     currentStep === 4 ? handleBackToStep3 :
+                    currentStep === 5 ? handleBackToStep4 :
                     undefined
                 }>
                     <ChevronLeft size={20}/>
@@ -960,7 +1066,11 @@ const VerifyBrandPage = () => {
                 </span>
             </div>
         </div>
-        {currentStep === 1 ? renderStep1() : currentStep === 2 ? renderStep2() : currentStep === 3 ? renderStep3() : renderStep4()}
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+        {currentStep === 4 && renderStep4()}
+        {currentStep === 5 && renderStep5()}
     </div>
   )
 }

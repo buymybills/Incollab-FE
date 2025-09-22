@@ -2,6 +2,8 @@
 import React, { useState } from "react"
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import OtpForm from '@/components/auth/OtpForm'
+import Image from "next/image"
+import { ChevronDown } from "lucide-react"
 
 const SignInPage = () => {
   const [mobileNumber, setMobileNumber] = useState("")
@@ -14,8 +16,8 @@ const SignInPage = () => {
   return (
     <div className="min-h-screen md:flex">
       {/* Mobile Layout */}
-      <div className="md:hidden max-w-md w-full text-center h-screen flex flex-col items-center justify-between px-4 mx-auto">
-        <div className='space-y-5 pt-12'>
+      <div className="md:hidden w-full text-center h-screen flex flex-col items-center justify-around border border-red-400 px-4 mx-auto">
+        <div className='space-y-5'>
             <div className="space-y-2">
                 <h1 className="text-[32px] font-bold text-black tracking-tight text-start w-64">
                     GROW YOUR INFLUENCE. GET DISCOVERED
@@ -27,7 +29,7 @@ const SignInPage = () => {
             </p>
         </div>
         
-        <div className="space-y-6 w-full pb-8">
+        <div className="space-y-6 w-full">
           
           <div className="space-y-4">
             
@@ -40,21 +42,21 @@ const SignInPage = () => {
                             Login / Signup as Influencer
                         </h2>
                         <div className="flex gap-2 mb-6">
-                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-3">
-                                <span className="text-lg">🇮🇳</span>
-                                <span className="font-medium">+91</span>
-                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
+                            <div className="flex items-center px-3 gap-1 bg-gray-50 border border-gray-200 rounded-full py-3">
+                                <Image src={"/images/icons/india-flag.svg"} alt="flag" width={20} height={20}/>
+                                <span>+91</span>
+                                <ChevronDown/>
                             </div>
-                            <input 
-                                type="tel"
-                                placeholder="Enter Mobile number"
-                                value={mobileNumber}
-                                onChange={(e) => setMobileNumber(e.target.value)}
-                                className="flex-1 bg-gray-50 border border-[#E4E4E4] rounded-full px-4 py-5 text-black focus:outline-none focus:border-theme-blue placeholder:text-black"
-                                maxLength={10}
-                            />
+                            <div className="bg-white border border-[#E4E4E4] rounded-full w-full py-4">
+                                <input 
+                                    type="tel"
+                                    placeholder="Enter Mobile number"
+                                    value={mobileNumber}
+                                    onChange={(e) => setMobileNumber(e.target.value)}
+                                    className="h-full w-full bg-transparent focus:outline-none pl-4"
+                                    maxLength={10}
+                                />
+                            </div>
                         </div>
                         {mobileNumber.length === 10 ? (
                             <div onClick={handleContinue}>

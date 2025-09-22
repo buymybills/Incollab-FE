@@ -1,6 +1,7 @@
 "use client"
 import { MapPin, MoreHorizontal } from 'lucide-react'
 import Image from 'next/image'
+import BottomTab from '../common/BottomTab'
 import TabWithBadge from '../ui/tabs/TabWithBadge'
 import ProfileStatusAlert from './ProfileStatusAlert'
 
@@ -123,6 +124,9 @@ const ProfileDetail = ({
         <div className="mt-6">
             <TabWithBadge/>
         </div>
+
+        {/* bottom tab */}
+        <BottomTab activeTab='profile' />
       </div>
     </div>
   )

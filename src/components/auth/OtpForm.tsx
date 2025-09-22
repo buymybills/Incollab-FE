@@ -110,7 +110,7 @@ export default function OtpForm() {
           <form onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div>
-                <div className="flex gap-2 sm:gap-4" id="otp-container">
+                <div className="flex gap-1.5 sm:gap-4" id="otp-container">
                   {otp.map((_, index) => (
                     <input
                       key={index}
@@ -125,7 +125,7 @@ export default function OtpForm() {
                           inputsRef.current[index] = el;
                         }
                       }}
-                      className="border-2 border-black rounded-full w-14 h-16 flex items-center justify-center text-center font-medium"
+                      className="border-2 border-black rounded-full w-13 h-16 flex items-center justify-center text-center font-medium"
                     />
                   ))}
                 </div>

@@ -296,7 +296,10 @@ const CreateCampaignPage = () => {
           />
         ) : (
           <>
+          {
+            currentStep !== 1 &&
             <ProgressIndicator />
+          }
 
         {currentStep === 1 ? (
           /* Step 1: Campaign Basic Info */
@@ -624,7 +627,7 @@ const CreateCampaignPage = () => {
           <>
             {/* Title */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-black">
+              <h1 className="font-bold text-black">
                 Where Do you want to run this Campaign
               </h1>
             </div>
@@ -747,7 +750,7 @@ const CreateCampaignPage = () => {
           <>
             {/* Title */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-black">
+              <h1 className="font-bold text-black">
                 Campaign Budget per Deliverables
               </h1>
             </div>
@@ -1024,8 +1027,8 @@ const CreateCampaignPage = () => {
           /* Step 7: Performance Expectations */
           <>
             {/* Title */}
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-black">
+            <div className="text-left mb-3">
+              <h1 className="font-bold text-black">
                 Performance Expectations
               </h1>
             </div>
@@ -1068,8 +1071,8 @@ const CreateCampaignPage = () => {
           /* Step 8: Brand Support */
           <>
             {/* Title */}
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-black">
+            <div className="text-left mb-3">
+              <h1 className="font-bold text-black">
                 Brand Support
               </h1>
             </div>
