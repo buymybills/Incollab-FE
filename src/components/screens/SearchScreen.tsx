@@ -1,57 +1,51 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronLeft, SlidersHorizontal, ChevronDown, Check } from 'lucide-react';
 import Image from 'next/image';
 import { Influencer } from '@/types/influencer.interface';
+import useFetchApi from '@/hooks/useFetchApi';
 
 interface SearchScreenProps {
   onBack?: () => void;
-  searchQuery?: string;
   onInfluencersSelected?: (influencers: Influencer[]) => void;
 }
 
-const SearchScreen: React.FC<SearchScreenProps> = ({ onBack, searchQuery = "Search for Influencers", onInfluencersSelected }) => {
-  const [searchText, setSearchText] = useState(searchQuery);
+interface SearchInfluencerApiResponse {
+  influencers: Influencer[];
+}
+
+const SearchScreen: React.FC<SearchScreenProps> = ({ onBack, onInfluencersSelected }) => {
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [selectedInfluencers, setSelectedInfluencers] = useState<Influencer[]>([]);
+  const [allInfluencers, setAllInfluencers] = useState<Influencer[]>([]);
 
-  const influencers: Influencer[] = [
-    {
-      id: "1",
-      name: "Sneha Sharma",
-      username: "@sneha_s09",
-      image: "/images/user/influencer.svg",
-      isVerified: true
-    },
-    {
-      id: "2",
-      name: "Avantika Shah",
-      username: "@Avantika_S",
-      image: "/images/user/influencer.svg",
-      isVerified: true
-    },
-    {
-      id: "3",
-      name: "Avantika Shah",
-      username: "@Avantika_S",
-      image: "/images/user/influencer.svg",
-      isVerified: true
-    },
-    {
-      id: "4",
-      name: "Sneha Sharma",
-      username: "@sneha_s09",
-      image: "/images/user/influencer.svg",
-      isVerified: true
-    },
-    {
-      id: "5",
-      name: "Avantika Shah",
-      username: "@Avantika_S",
-      image: "/images/user/influencer.svg",
-      isVerified: true
+  // Debounce effect for search text
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 700);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchText]);
+
+  const {data: searchedInfluencer} = useFetchApi<SearchInfluencerApiResponse>({
+    endpoint: 'campaign/influencers/search',
+    options:{
+      params:{
+        search: debouncedSearchText
+      }
     }
-  ];
+  })
+
+  useEffect(() => {
+    if (searchedInfluencer) {
+      setAllInfluencers(searchedInfluencer?.influencers);
+    }
+  }, [searchedInfluencer]);
 
   const handleInfluencerToggle = (influencer: Influencer) => {
     setSelectedInfluencers(prev => {
@@ -70,7 +64,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ onBack, searchQuery = "Sear
     }
   };
 
-  const isInfluencerSelected = (influencerId: string) => {
+  const isInfluencerSelected = (influencerId: number) => {
     return selectedInfluencers.some(inf => inf.id === influencerId);
   };
 
@@ -130,7 +124,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ onBack, searchQuery = "Sear
       {/* Search Results */}
       <div className="">
         <div className="mt-5">
-          {influencers.map((influencer) => (
+          {allInfluencers.map((influencer) => (
             <div
               key={influencer.id}
               className={`bg-white rounded-lg cursor-pointer transition-colors`}
@@ -139,7 +133,7 @@ const SearchScreen: React.FC<SearchScreenProps> = ({ onBack, searchQuery = "Sear
               <div className="flex items-center gap-3 py-2">
                 <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gray-200">
                   <Image
-                    src={influencer.image}
+                    src={influencer.profileImage}
                     alt={influencer.name}
                     fill
                     className="object-cover"

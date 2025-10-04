@@ -1,5 +1,5 @@
 "use client"
-import { CircleCheck, CircleX, ClockFading } from 'lucide-react';
+import { CircleCheck, CircleX, ClockFading, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import React from 'react'
 
@@ -9,11 +9,13 @@ interface CampaignCardProps {
   brandName: string;
   category: string;
   deliverable: string;
-  status?: 'Ongoing' | 'Completed' | 'Pending';
+  status?: string;
   onViewCampaignDetail?: () => void;
   showAppliedStatus?: boolean;
-  appliedStatus?: "Applied" | "underreview" | "selected" | "rejected";
+  appliedStatus?: "applied" | "under_review" | "selected" | "rejected";
   numberOfApplications?: number;
+  onEdit?: () => void;
+  showEditButton?: boolean;
 }
 
 const CampaignCard = ({
@@ -26,26 +28,33 @@ const CampaignCard = ({
     onViewCampaignDetail,
     showAppliedStatus,
     appliedStatus,
-    numberOfApplications
+    numberOfApplications,
+    onEdit,
+    showEditButton = false
   }: CampaignCardProps) => {
     const handleCardClick = () => {
       onViewCampaignDetail?.();
     };
-  
+
+    const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent card click when clicking edit button
+      onEdit?.();
+    };
+
     return (
       <>
-        <div
-          className="border-b border-dashed border-[#E4E4E4] pb-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-          onClick={handleCardClick}
-        >
-          <div className="flex items-start gap-x-3 mt-6">
-          <div className="w-12 h-12 flex-shrink-0 bg-white flex items-center justify-center">
+        <div className="border-b border-dashed border-[#E4E4E4] pb-6">
+          <div className="flex items-start justify-between gap-x-3 mt-6">
+            <div
+              className="flex items-start gap-x-3 flex-1 cursor-pointer hover:bg-gray-50 transition-colors duration-200 pr-2"
+              onClick={handleCardClick}
+            >
+          <div className="w-12 h-12 flex-shrink-0 relative bg-white flex rounded-full overflow-hidden items-center justify-center">
             <Image
               src={brandLogo}
               alt={brandName}
-              width={48}
-              height={48}
-              className="w-full h-full object-contain"
+              fill
+              className="w-full h-full object-cover"
             />
           </div>
   
@@ -76,14 +85,14 @@ const CampaignCard = ({
               showAppliedStatus && (
                 <>
                 {
-                  appliedStatus === "Applied" && (
+                  appliedStatus === "applied" && (
                     <div className='applied-time mt-2'>
                       <p className='text-[#999] font-medium text-sm'>Applied 2 Days ago</p>
                     </div>
                   )
                 }
                 {
-                  appliedStatus === "underreview" && (
+                  appliedStatus === "under_review" && (
                     <div className='applied-time mt-2'>
                       <div className='flex items-center gap-x-2'>
                         <ClockFading className='text-theme-primary' size={20}/>
@@ -121,7 +130,19 @@ const CampaignCard = ({
               )
             }
           </div>
-        </div>
+            </div>
+
+            {/* Edit button */}
+            {showEditButton && (
+              <button
+                onClick={handleEdit}
+                className='flex items-center gap-x-1 text-[#555] flex-shrink-0 mt-1'
+              >
+                <Pencil size={16}/>
+                <span>Edit</span>
+              </button>
+            )}
+          </div>
         </div>
       </>
     );

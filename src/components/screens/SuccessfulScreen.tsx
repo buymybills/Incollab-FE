@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 
-const SuccessfulScreen = ({onBack}: {onBack: () => void}) => {
+const SuccessfulScreen = ({onBack, heading, subHeading}: {onBack: () => void, heading: string, subHeading: string}) => {
   return (
     <div className='flex items-center flex-col justify-center'>
         <button className='absolute top-5 left-5' onClick={onBack}>
@@ -12,8 +12,8 @@ const SuccessfulScreen = ({onBack}: {onBack: () => void}) => {
             <Image src="/images/icons/green-tick-badge.svg" alt="Successful" fill className='object-cover'/>
         </div>
         <div className='text-center space-y-4 mt-7'>
-            <p className='text-black font-bold text-2xl px-10'>Your Campaign is successfully posted</p>
-            <p className='text-[#555] font-medium text-sm'>Check the application status in &apos;Campaign Management&apos; tab in Profile & Setting</p>
+            <p className='text-black font-bold text-2xl px-10'>{heading}</p>
+            <p className='text-[#555] font-medium text-sm'>{subHeading}</p>
         </div>
     </div>
   )

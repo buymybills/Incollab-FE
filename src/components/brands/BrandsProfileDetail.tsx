@@ -1,8 +1,13 @@
 "use client"
-import { MapPin, MoreHorizontal } from 'lucide-react'
+import { MapPin, MoreHorizontal, Settings } from 'lucide-react'
 import Image from 'next/image'
 import ProfileStatusAlert from '../influencer/ProfileStatusAlert'
 import BrandsTabs from './BrandsTabs'
+import { useAuthContext } from '@/auth/context/auth-provider'
+import BrandsBottomTab from '../common/BrandsBottomTab'
+import PopoverComponent from '../common/Popover'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface BrandsProfileDetailProps {
   bannerImage?: string
@@ -12,6 +17,7 @@ interface BrandsProfileDetailProps {
   isVerified?: boolean
   location?: string
   bio?: string
+  profileUserId?: number | string
   stats?: {
     posts: string | number
     followers: string | number
@@ -21,20 +27,46 @@ interface BrandsProfileDetailProps {
 }
 
 const BrandsProfileDetail = ({
-  bannerImage = "/images/user/influencer.svg",
-  profileImage = "/images/brand/loreal.svg",
-  name = "Sneha Sharma",
-  username = "@sneha_s19",
-  isVerified = true,
-  location = "Navi Mumbai, Maharashtra, India",
-  bio = "Obsessed with all things fashion & beauty ✨ Sharing daily looks, skincare secrets & makeup tips that anyone can try!",
-  stats = {
-    posts: "1200",
-    followers: "120K",
-    following: "120",
-    campaigns: "05"
-  }
+  bannerImage: defaultBannerImage,
+  profileImage: defaultProfileImage,
+  name: defaultName,
+  username: defaultUsername,
+  isVerified: defaultIsVerified,
+  location: defaultLocation,
+  bio: defaultBio,
+  profileUserId,
 }: BrandsProfileDetailProps) => {
+  const {user} = useAuthContext();
+
+  // Use user data from auth context if available, otherwise use defaults
+  const bannerImage = user?.profileMedia?.profileBanner || defaultBannerImage || "/images/user/influencer.svg"
+  const profileImage = user?.profileMedia?.profileImage || defaultProfileImage || "/images/brand/loreal.svg"
+  const name = user?.brandName || defaultName || "Brand Name"
+  const username = user?.username ? `@${user.username}` : defaultUsername || "@username"
+  const isVerified = user?.isEmailVerified || defaultIsVerified || false
+  const location = user?.companyInfo?.headquarterCity?.name && user?.companyInfo?.headquarterCountry?.name
+    ? `${user.companyInfo.headquarterCity.name}, ${user.companyInfo.headquarterCountry.name}`
+    : defaultLocation || "Location not set"
+  const bio = user?.brandBio || user?.profileHeadline || defaultBio || "No bio available"
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const router = useRouter();
+
+  // Check if viewing own profile
+  const isOwnProfile = profileUserId ? user?.id === profileUserId : true;
+
+  const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+    console.log("clicked")
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSettingsClick = () => {
+    handlePopoverClose();
+    router.push('/brands/me/brands-settings');
+  };
   return (
     <div>
       {/* Banner Image */}
@@ -81,48 +113,109 @@ const BrandsProfileDetail = ({
         {/* Stats */}
         <div className="flex justify-between items-center mt-6">
           <div className="text-center">
-            <div className="font-extrabold text-black">{stats.posts}</div>
+            <div className="font-extrabold text-black">{user?.metrics?.posts}</div>
             <div className="text-sm text-[#999] font-medium">Posts</div>
           </div>
           <hr className='h-9 w-[0.7px] bg-[#E4E4E4]'/>
           <div className="text-center">
-            <div className="font-extrabold text-black">{stats.followers}</div>
+            <div className="font-extrabold text-black">{user?.metrics?.followers}</div>
             <div className="text-sm text-[#999] font-medium">Followers</div>
           </div>
           <hr className='h-9 w-[0.7px] bg-[#E4E4E4]'/>
           <div className="text-center">
-            <div className="font-extrabold text-black">{stats.following}</div>
+            <div className="font-extrabold text-black">{user?.metrics?.following}</div>
             <div className="text-sm text-[#999] font-medium">Following</div>
           </div>
           <hr className='h-9 w-[0.7px] bg-[#E4E4E4]'/>
           <div className="text-center">
-            <div className="font-extrabold text-black">{stats.campaigns}</div>
+            <div className="font-extrabold text-black">{user?.metrics?.campaigns}</div>
             <div className="text-sm text-[#999] font-medium">Campaigns</div>
           </div>
         </div>
 
-         {/* profile status */}
-          <div className='mt-6'>
-            <ProfileStatusAlert status='rejected'/>
-          </div>
-
         {/* Action Buttons */}
         <div className="flex gap-3 mt-6">
-          <button className="flex-1 bg-theme-blue text-white py-2.5 px-4 rounded-full font-bold text-sm">
-            Follow
-          </button>
-          <button className="flex-1 border border-theme-blue text-theme-blue py-2.5 px-4 rounded-full font-bold text-sm">
-            Message
-          </button>
-          <button className="w-10 h-10 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-            <MoreHorizontal size={18} className="text-gray-600" />
-          </button>
+          {isOwnProfile ? (
+            <>
+              <button onClick={() => router.push('/brands/me/edit-profile')} className="flex-1 bg-theme-primary text-white py-2.5 px-4 rounded-full font-bold text-sm">
+                Edit Profile
+              </button>
+              {!user?.verificationStatus?.status && (
+                <button onClick={() => router.push('/brands/me/verify')} className="flex-1 border-theme-primary border text-theme-primary py-2.5 px-4 rounded-full font-bold text-sm">
+                  Verify Profile
+                </button>
+              )}
+              <button
+                onClick={handlePopoverOpen}
+                className="w-10 h-10 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
+              >
+                <MoreHorizontal size={18} className="text-gray-600" />
+              </button>
+
+              <PopoverComponent
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={handlePopoverClose}
+              >
+                <div className='w-44 border-2 border-[#E4E4E4] rounded-xl'>
+                  <button
+                    onClick={handleSettingsClick}
+                    className="w-full first:rounded-t-xl py-3 ps-4 text-left text-sm border-b border-[#E4E4E4] hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  >
+                    <Settings size={16} />
+                    <span>Settings</span>
+                  </button>
+                </div>
+              </PopoverComponent>
+            </>
+          ) : (
+            <>
+              <button className="flex-1 bg-theme-blue text-white py-2.5 px-4 rounded-full font-bold text-sm">
+                Follow
+              </button>
+              <button className="flex-1 border border-theme-blue text-theme-blue py-2.5 px-4 rounded-full font-bold text-sm">
+                Message
+              </button>
+              <button
+                onClick={handlePopoverOpen}
+                className="w-10 h-10 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
+              >
+                <MoreHorizontal size={18} className="text-gray-600" />
+              </button>
+
+              <PopoverComponent
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={handlePopoverClose}
+              >
+                <div className='w-44 border-2 border-[#E4E4E4] rounded-xl'>
+                  <button
+                    onClick={handleSettingsClick}
+                    className="w-full first:rounded-t-xl py-3 ps-4 text-left text-sm border-b border-[#E4E4E4] hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  >
+                    <Settings size={16} />
+                    <span>Settings</span>
+                  </button>
+                </div>
+              </PopoverComponent>
+            </>
+          )}
         </div>
+
+        {/* Profile Status Alert */}
+        {
+          user?.verificationStatus && (
+            <div>
+              <ProfileStatusAlert status={user?.verificationStatus?.status}/>
+            </div>
+          )
+        }
 
         {/* tabs */}
         <div className="mt-6">
             <BrandsTabs/>
         </div>
+        <BrandsBottomTab activeTab='profile' />
       </div>
     </div>
   )

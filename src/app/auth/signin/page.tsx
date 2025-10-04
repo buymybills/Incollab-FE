@@ -1,43 +1,72 @@
 "use client"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import OtpForm from '@/components/auth/OtpForm'
 import Image from "next/image"
 import { ChevronDown } from "lucide-react"
+import useMutationApi from "@/hooks/useMutationApi"
 
 const SignInPage = () => {
   const [mobileNumber, setMobileNumber] = useState("")
   const [showOtpForm, setShowOtpForm] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const images = [
+    "/images/influencer/fashion-signin.svg",
+    "/images/influencer/food-signin.svg",
+    "/images/influencer/electronic-signin.svg"
+  ]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length)
+    }, 2000) // Changes every 2 second
+
+    return () => clearInterval(interval)
+  }, [images.length])
 
   const handleContinue = () => {
     setShowOtpForm(true)
   }
 
+  const {mutateAsync: sendOtp, isPending: sendOtpLoading} = useMutationApi({
+    endpoint: 'auth/influencer/request-otp',
+    method: 'post',
+    onSuccess: () => {
+      setShowOtpForm(true)
+    }
+  })
+
+  const handleSendOtp = async () => {
+    await sendOtp({
+      phone: mobileNumber
+    })
+  }
+
   return (
     <div className="min-h-screen md:flex">
       {/* Mobile Layout */}
-      <div className="md:hidden w-full text-center h-screen flex flex-col items-center justify-around border border-red-400 px-4 mx-auto">
-        <div className='space-y-5'>
-            <div className="space-y-2">
-                <h1 className="text-[32px] font-bold text-black tracking-tight text-start w-64">
-                    GROW YOUR INFLUENCE. GET DISCOVERED
-                </h1>
-            </div>
-            
-            <p className="text-[#999] text-base leading-relaxed text-left">
-                Build your professional profile, showcase your content, apply for brand campaigns, and track your earnings — all in one place.
-            </p>
-        </div>
-        
-        <div className="space-y-6 w-full">
-          
+      <div className="md:hidden w-full text-center h-screen flex flex-col items-center justify-around px-4 mx-auto" style={{backgroundImage: 'url(/images/bg/signin-landing-page-bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
+      <div className="flex items-center justify-center h-80 w-80 relative mt-36 mobile-image overflow-hidden">
+        <Image
+          src={images[currentImageIndex]}
+          alt="carousel"
+          fill
+          className="object-cover animate-[slideIn_1s_ease-in-out]"
+          key={currentImageIndex}
+        />
+      </div>
+        <div className="space-y-6 w-full mt-auto mb-10">
+          <div className="logo relative top-2">
+            <h2 className="font-bold text-theme-primary text-2xl">CollabKaroo</h2>
+          </div>
           <div className="space-y-4">
             
             {
                 showOtpForm ? (
-                    <OtpForm/>
+                    <OtpForm phone={mobileNumber}/>
                 ) : (
-                    <div>
+                    <div className="">
                         <h2 className="font-bold text-black text-center mb-6">
                             Login / Signup as Influencer
                         </h2>
@@ -59,10 +88,10 @@ const SignInPage = () => {
                             </div>
                         </div>
                         {mobileNumber.length === 10 ? (
-                            <div onClick={handleContinue}>
+                            <div onClick={handleSendOtp}>
                                 <ArrowFilledButton 
                                     className="w-full text-center" 
-                                    text="Continue" 
+                                    text={sendOtpLoading ? "Sending OTP..." : "Continue"} 
                                     textCenter={true}
                                 />
                             </div>
@@ -110,7 +139,7 @@ const SignInPage = () => {
 
             <div className="space-y-8">
               {showOtpForm ? (
-                <OtpForm/>
+                <OtpForm phone={mobileNumber}/>
               ) : (
                 <div>
                   <h3 className="font-bold text-black text-center mb-8 text-lg">

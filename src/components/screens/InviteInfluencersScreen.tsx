@@ -1,15 +1,17 @@
 "use client";
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton';
+import useMutationApi from '@/hooks/useMutationApi';
+import { Influencer } from '@/types/influencer.interface';
 import { X } from 'lucide-react';
 import Image from 'next/image';
-import React from 'react';
-import { Influencer } from '@/types/influencer.interface';
+import React, { useState } from 'react';
 
 interface InviteInfluencersScreenProps {
   selectedInfluencers: Influencer[];
-  onRemoveInfluencer: (influencerId: string) => void;
+  onRemoveInfluencer: (influencerId: number) => void;
   onUploadCampaign: () => void;
   onInviteMore: () => void;
+  campaignId?: number;
   campaignData?: {
     name: string;
     brandName: string;
@@ -23,6 +25,7 @@ const InviteInfluencersScreen: React.FC<InviteInfluencersScreenProps> = ({
   onRemoveInfluencer,
   onUploadCampaign,
   onInviteMore,
+  campaignId,
   campaignData = {
     name: "Glow Like Never Before",
     brandName: "L'Oréal Paris",
@@ -30,6 +33,43 @@ const InviteInfluencersScreen: React.FC<InviteInfluencersScreenProps> = ({
     deliverable: "2 Instagram reels, 3 story posts"
   }
 }) => {
+  const [personalMessage, setPersonalMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {mutateAsync: inviteInfluencers} = useMutationApi({
+    endpoint: 'campaign/invite-influencers',
+    method: 'POST',
+  })
+
+  const handleUploadCampaign = async () => {
+    if (!campaignId) {
+      console.error('Campaign ID is required');
+      return;
+    }
+
+    if (selectedInfluencers.length === 0) {
+      console.error('No influencers selected');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const influencerIds = selectedInfluencers.map(influencer => influencer.id);
+
+      await inviteInfluencers({
+        campaignId,
+        influencerIds,
+        personalMessage: personalMessage || undefined
+      });
+
+      // Call the onUploadCampaign callback on success
+      onUploadCampaign();
+    } catch (error) {
+      console.error('Failed to invite influencers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const ProgressIndicator = () => (
     <div className="w-full max-w-sm mb-8">
@@ -91,6 +131,27 @@ const InviteInfluencersScreen: React.FC<InviteInfluencersScreenProps> = ({
           </button>
         </div>
 
+        {/* Personal Message Section */}
+        <div className="w-full max-w-sm mb-8">
+          <div className="mb-2">
+            <h3 className="font-bold text-black text-lg">Personal Message (Optional)</h3>
+            <p className="text-[#999] text-sm font-medium">
+              Add a personalized message to your invitation
+            </p>
+          </div>
+          <textarea
+            value={personalMessage}
+            onChange={(e) => setPersonalMessage(e.target.value)}
+            placeholder="We love your content and would like to collaborate with you on our campaign!"
+            maxLength={500}
+            className="w-full p-4 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white placeholder-[#999] resize-none"
+            rows={4}
+          />
+          <div className="text-right text-xs text-gray-500 mt-1">
+            {personalMessage.length}/500
+          </div>
+        </div>
+
         {/* Selected Influencers Section */}
         <div className="w-full max-w-sm mb-20">
           <div className="mb-4">
@@ -107,7 +168,7 @@ const InviteInfluencersScreen: React.FC<InviteInfluencersScreenProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden relative bg-gray-200">
                     <Image
-                      src={influencer.image}
+                      src={influencer.profileImage}
                       alt={influencer.name}
                       fill
                       className="object-cover"
@@ -143,8 +204,9 @@ const InviteInfluencersScreen: React.FC<InviteInfluencersScreenProps> = ({
         {/* Upload Button */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
           <ArrowFilledButton
-            text="Upload As Invite Campaign"
-            onClick={onUploadCampaign}
+            text={isLoading ? "Uploading..." : "Upload As Invite Campaign"}
+            onClick={handleUploadCampaign}
+            disabled={isLoading || selectedInfluencers.length === 0}
           />
         </div>
       </div>

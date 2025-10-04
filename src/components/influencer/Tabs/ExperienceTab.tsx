@@ -5,6 +5,24 @@ import React, { useState } from 'react';
 import BottomSheet from '../../bottomsheets/BottomSheet';
 import { ChevronRight, CirclePlus, Megaphone, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import useFetchApi from '@/hooks/useFetchApi';
+
+interface Experience {
+  id: number | string
+  brandLogo: string
+  title: string
+  brandName: string
+  category: string
+  deliverable: string
+  status: 'Ongoing' | 'Completed' | 'Pending'
+  // Add any other fields that might come from the API
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface ExperienceApiResponse {
+  experiences: Experience[]
+}
 
 interface ExperienceCardProps {
   brandLogo: string;
@@ -24,7 +42,7 @@ const ExperienceDetailContent = ({
   status
 }: ExperienceCardProps) => {
   return (
-    <div className="px-3 pb-2">
+    <div className="px-3 pb-24">
       <div className="gap-x-3 mb-5">
         <div className="flex-shrink-0">
           <Image
@@ -161,6 +179,7 @@ const ExperienceCard = ({
   status
 }: ExperienceCardProps) => {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const router = useRouter();
 
   const handleCardClick = () => {
     setIsBottomSheetOpen(true);
@@ -171,53 +190,72 @@ const ExperienceCard = ({
     setIsBottomSheetOpen(false);
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click when clicking edit button
+    // Navigate to edit experience page or open edit modal
+    router.push('/influencers/me/edit-experience');
+  };
+
   return (
     <>
-      <div
-        className="border-b border-dashed border-[#E4E4E4] pb-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-        onClick={handleCardClick}
-      >
-        <div className="flex items-start gap-x-3 mt-6">
-        <div className="w-12 h-12 flex-shrink-0 bg-white flex items-center justify-center">
-          <Image
-            src={brandLogo}
-            alt={brandName}
-            width={48}
-            height={48}
-            className="w-full h-full object-contain"
-          />
+      <div className="border-b border-dashed border-[#E4E4E4] pb-6">
+        <div className="flex items-start justify-between gap-x-3 mt-6">
+          <div
+            className="flex items-start gap-x-3 flex-1 cursor-pointer hover:bg-gray-50 transition-colors duration-200 pr-2"
+            onClick={handleCardClick}
+          >
+            <div className="w-12 h-12 flex-shrink-0 bg-white flex items-center justify-center">
+              <Image
+                src={brandLogo}
+                alt={brandName}
+                width={48}
+                height={48}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col">
+                <h3 className="font-extrabold text-black text-base">
+                  {title}
+                </h3>
+                <p className="text-black font-medium">{brandName}</p>
+              </div>
+
+              <div className="">
+                <span className="text-sm text-[#555]">Category: </span>
+                <span className="text-sm text-black font-medium">{category}</span>
+              </div>
+
+              <div className="">
+                <span className="text-sm text-[#555]">Deliverable - </span>
+                <span className="text-sm text-black font-medium">{deliverable}</span>
+              </div>
+
+              <div>
+                <span className={`text-sm font-medium text-[#555]`}>
+                  {status}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Edit button for individual experience */}
+          <button
+            onClick={handleEdit}
+            className='flex items-center gap-x-1 text-[#555] flex-shrink-0 mt-1'
+          >
+            <Pencil size={16}/>
+            <span>Edit</span>
+          </button>
         </div>
-
-        <div className="flex-min-w-0">
-          <div className="flex flex-col">
-            <h3 className="font-extrabold text-black text-base">
-              {title}
-            </h3>
-            <p className="text-black font-medium">{brandName}</p>
-          </div>
-
-          <div className="">
-            <span className="text-sm text-[#555]">Category: </span>
-            <span className="text-sm text-black font-medium">{category}</span>
-          </div>
-
-          <div className="">
-            <span className="text-sm text-[#555]">Deliverable - </span>
-            <span className="text-sm text-black font-medium">{deliverable}</span>
-          </div>
-
-          <div>
-            <span className={`text-sm font-medium text-[#555]`}>
-              {status}
-            </span>
-          </div>
-        </div>
-      </div>
       </div>
 
       <BottomSheet
         isOpen={isBottomSheetOpen}
         onClose={handleCloseBottomSheet}
+        bottomSheetMaximumHeight={800}
+        bottomSheetMinimumHeight={600}
       >
         <ExperienceDetailContent
           brandLogo={brandLogo}
@@ -234,46 +272,49 @@ const ExperienceCard = ({
 
 const ExperienceTab = () => {
   const router = useRouter();
+  const {data: experienceData} = useFetchApi<ExperienceApiResponse>({
+    endpoint: 'influencer/experiences',
+  })
+
+  console.log(experienceData);
+
+
+  // Show add campaign experience card if no data
+  if (!experienceData || experienceData?.experiences?.length === 0) {
+    return (
+      <div className='apply-for-campaign flex flex-col items-center gap-y-4 justify-center pb-16 pt-10'>
+        <p className='text-[#555] font-medium text-sm'>NO CAMPAIGN TO ADD IN EXPERIENCE</p>
+        <button onClick={() => router.push('/influencers/me/add-experience')} className='flex items-center gap-x-2 border border-dashed border-theme-primary rounded-full px-3 py-2 font-semibold text-theme-primary'>
+          <Megaphone size={16}/>
+          Add Campaigns Experience
+        </button>
+      </div>
+    )
+  }
+
+  // Show experience cards if data exists
   return (
     <>
-        <div>
+      <div className='pb-12'>
         <div className='flex items-center mb-2 justify-between'>
           <h2 className="text-black font-extrabold text-base">Experience</h2>
-          <div className='flex items-center gap-x-2'>
-            <button className='flex items-center gap-x-1 text-theme-primary'>
-              <CirclePlus size={16}/>
-              <span>Add</span>
-            </button>
-            <button className='flex items-center gap-x-1 text-[#555]'>
-              <Pencil size={16}/>
-              <span>Edit</span>
-            </button>
-          </div>
+          <button onClick={() => router.push('/influencers/me/add-experience')} className='flex items-center gap-x-1 text-theme-primary'>
+            <CirclePlus size={16}/>
+            <span>Add</span>
+          </button>
         </div>
-            <ExperienceCard
-                brandLogo="/images/brand/nykaa.svg"
-                title="Glow Like Never Before"
-                brandName="Nykaa"
-                category="Skincare + Makeup"
-                deliverable="2 Instagram reels, 3 story posts"
-                status="Ongoing"
-            />
-            <ExperienceCard
-                brandLogo="/images/brand/nykaa.svg"
-                title="Glow Like Never Before"
-                brandName="Nykaa"
-                category="Skincare + Makeup"
-                deliverable="2 Instagram reels, 3 story posts"
-                status="Ongoing"
-            />
-        </div>
-        <div className='apply-for-campaign flex flex-col items-center gap-y-4 justify-center pb-16'>
-            <p className='text-[#555] font-medium text-sm'>NO CAMPAIGN TO ADD IN EXPERIENCE</p>
-            <button onClick={() => router.push('/influencers/me/add-experience')} className='flex items-center gap-x-2 border border-dashed border-theme-primary rounded-full px-3 py-2 font-semibold text-theme-primary'>
-                <Megaphone size={16}/>
-                Add Campaigns Experience
-            </button>
-        </div>
+        {experienceData?.experiences?.map((experience: Experience, index: number) => (
+          <ExperienceCard
+            key={index}
+            brandLogo={experience.brandLogo || "/images/brand/nykaa.svg"}
+            title={experience.title || "Campaign Title"}
+            brandName={experience.brandName || "Brand Name"}
+            category={experience.category || "Category"}
+            deliverable={experience.deliverable || "Deliverable"}
+            status={experience.status || "Ongoing"}
+          />
+        ))}
+      </div>
     </>
   )
 }

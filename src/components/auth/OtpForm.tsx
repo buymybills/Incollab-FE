@@ -1,14 +1,36 @@
 "use client";
+import { useAuthContext } from "@/auth/context/auth-provider";
+import useMutationApi from "@/hooks/useMutationApi";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import ArrowFilledButton from "../buttons/ArrowFilledButton";
-import { useRouter } from "next/navigation";
 
-export default function OtpForm() {
+interface OtpForm {
+    phone: string;
+}
+
+interface OtpFormResponse {
+  message: string;
+  accessToken: string;
+  refreshToken: string;
+  phone: string;
+  profileCompleted: boolean;
+  requiresProfileCompletion: boolean;
+  verificationKey: string;
+}
+
+export default function OtpForm({phone}: OtpForm) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendTimer, setResendTimer] = useState(20);
   const [canResend, setCanResend] = useState(false);
   const inputsRef = useRef<HTMLInputElement[]>([]);
   const router = useRouter();
+  const {setVerificationKey, setAccessToken, verificationKey} = useAuthContext();
+
+  const {mutateAsync: verifyOtp, isPending: verifyOtpLoading} = useMutationApi<OtpFormResponse>({
+    endpoint: 'auth/influencer/verify-otp',
+    method: 'post',
+  })
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -90,9 +112,24 @@ export default function OtpForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/auth/profile");
+    const response = await verifyOtp({
+      phone: phone,
+      otp: otp.join("")
+    })
+
+    if (response?.profileCompleted) {
+      setAccessToken(response?.accessToken, 'influencer');
+      console.log("inside if condition")
+      router.push("/influencers");
+    } else {
+      // Store phone or other identifier for incomplete profiles
+      setVerificationKey(response?.verificationKey);
+      console.log({verificationKey})
+      setAccessToken(response?.accessToken, 'influencer');
+      router.push("/auth/profile");
+    }
   };
 
   return (
@@ -103,7 +140,7 @@ export default function OtpForm() {
             OTP Verification
           </h1>
           <p className="text-xs text-[#555]">
-            You have received an OTP at +917073250472
+            You have received an OTP at {phone}
           </p>
         </div>
         <div>
@@ -125,7 +162,7 @@ export default function OtpForm() {
                           inputsRef.current[index] = el;
                         }
                       }}
-                      className="border-2 border-black rounded-full w-13 h-16 flex items-center justify-center text-center font-medium"
+                      className="border-2 border-black rounded-full w-12 flex-1 h-16 flex items-center justify-center text-center font-medium"
                     />
                   ))}
                 </div>
@@ -152,7 +189,7 @@ export default function OtpForm() {
                 </div>
               </div>
               <div>
-                <ArrowFilledButton text="Continue" textCenter={true}/>
+                <ArrowFilledButton text={verifyOtpLoading ? "Verifying OTP..." : "Continue"} textCenter={true}/>
               </div>
             </div>
           </form>

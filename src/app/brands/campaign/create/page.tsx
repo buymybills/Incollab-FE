@@ -1,12 +1,50 @@
 "use client"
+import { NichesData } from '@/app/auth/brands/profile/page'
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import InviteInfluencersScreen from '@/components/screens/InviteInfluencersScreen'
 import SearchScreen from '@/components/screens/SearchScreen'
 import SuccessfulScreen from '@/components/screens/SuccessfulScreen'
+import useFetchApi from '@/hooks/useFetchApi'
+import useMutationApi from '@/hooks/useMutationApi'
 import { Influencer } from '@/types/influencer.interface'
-import { ChevronDown, Clapperboard, Mars, MonitorSmartphone, PawPrint, Search, Shirt, Soup, Venus, Wallet, X } from 'lucide-react'
+import { ChevronDown, Mars, Search, Venus, X } from 'lucide-react'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+interface Deliverable {
+  platform: 'instagram' | 'facebook' | 'youtube' | 'linkedin' | 'twitter'
+  type: 'instagram_reel' | 'instagram_story' | 'instagram_post' | 
+        'facebook_post' | 'facebook_story' | 
+        'youtube_long_video' | 'youtube_short' | 
+        'linkedin_post' | 'linkedin_article' | 
+        'twitter_post' | 'twitter_thread'
+  budget: number
+  quantity: number
+  specifications: string
+}
+
+interface CityData {
+  id: number;
+  name: string;
+  state: string;
+  countryId: number;
+  tier: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PostCampaignResponse {
+  id: number;
+  message: string;
+}
+
+interface SearchedCityData{
+  id: number;
+  name: string;
+  state: string;
+  tier: number;
+}
 
 const CreateCampaignPage = () => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(1)
@@ -21,6 +59,18 @@ const CreateCampaignPage = () => {
   const [showSearchScreen, setShowSearchScreen] = useState<boolean>(false)
   const [showInviteScreen, setShowInviteScreen] = useState<boolean>(false)
   const [selectedInfluencers, setSelectedInfluencers] = useState<Influencer[]>([])
+  const [campaignId, setCampaignId] = useState<number | undefined>(undefined)
+  const [brandNiches, setBrandNiches] = useState<{ id: string; name: string; description: string; }[]>([])
+
+  const {data: nichesData} = useFetchApi<NichesData>({
+      endpoint: "auth/niches",
+    })
+  
+    useEffect(() => {
+      if (nichesData) {
+        setBrandNiches(nichesData.niches)
+      }
+    }, [nichesData])
 
   // Influencer Preference States
   const [minAge, setMinAge] = useState<string>('18')
@@ -28,12 +78,24 @@ const CreateCampaignPage = () => {
   const [openToAllAges, setOpenToAllAges] = useState<boolean>(false)
   const [selectedGender, setSelectedGender] = useState<string>('Male')
   const [openToAllGenders, setOpenToAllGenders] = useState<boolean>(false)
-  const [selectedNiches, setSelectedNiches] = useState<string[]>(['Fashion', 'Finance'])
+  const [selectedNiches, setSelectedNiches] = useState<string[]>([])
 
   // Step 5 - Location Selection States
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [selectedCities, setSelectedCities] = useState<string[]>([])
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('')
+  const [selectedCities, setSelectedCities] = useState<number[]>([]) // Store city IDs
   const [panIndiaSelected, setPanIndiaSelected] = useState<boolean>(false)
+
+  // Debounce effect for city search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 700);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
 
   // Step 6 - Collaboration Cost States
   const [collaborationCosts, setCollaborationCosts] = useState({
@@ -56,36 +118,362 @@ const CreateCampaignPage = () => {
   // Step 7 - Platform Selection States
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram'])
 
+  // Validation Error States
+  const [errors, setErrors] = useState({
+    campaignName: '',
+    deliverableText: '',
+    campaignDescription: '',
+    minAge: '',
+    maxAge: '',
+    selectedCities: '',
+    collaborationCosts: '',
+    performanceExpectations: '',
+    brandSupport: '',
+    campaignPostingOption: ''
+  })
+
   const handleContinueStep1 = () => {
-    setCurrentStep(2)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!campaignName.trim()) {
+      newErrors.campaignName = 'Campaign name is required'
+      hasError = true
+    } else {
+      newErrors.campaignName = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(2)
+    }
   }
 
+  const {mutateAsync: postCampaign, isPending: isPostingCampaign} = useMutationApi <PostCampaignResponse>({
+    endpoint: 'campaign',
+    method: 'POST',
+  })
+
+  const {data: citiesResponse} = useFetchApi<CityData[]>({
+    endpoint: 'campaign/cities/popular',
+  })
+
+  const {data: searchedCity, retrieve: fetchSearchedCities} = useFetchApi<SearchedCityData[]>({
+    endpoint: 'campaign/cities/search',
+    options:{
+      params:{
+        searchQuery: debouncedSearchQuery
+      }
+    },
+    retrieveOnMount: false,
+    cacheEnabled: false
+  })
+
+  // Trigger search API when debounced query changes
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      fetchSearchedCities();
+    }
+  }, [debouncedSearchQuery]);
+
+  const cities = citiesResponse || [];
+
+  const prepareCampaignData = () => {
+    // Build deliverables array from collaboration costs
+    const deliverables: Deliverable[] = [];
+
+    // Instagram deliverables
+    if (collaborationCosts.instagram.reel) {
+      deliverables.push({
+        platform: "instagram",
+        type: "instagram_reel",
+        budget: parseFloat(collaborationCosts.instagram.reel),
+        quantity: 1,
+        specifications: ""
+      });
+    }
+    if (collaborationCosts.instagram.story) {
+      deliverables.push({
+        platform: "instagram",
+        type: "instagram_story",
+        budget: parseFloat(collaborationCosts.instagram.story),
+        quantity: 1,
+        specifications: ""
+      });
+    }
+    if (collaborationCosts.instagram.post) {
+      deliverables.push({
+        platform: "instagram",
+        type: "instagram_post",
+        budget: parseFloat(collaborationCosts.instagram.post),
+        quantity: 1,
+        specifications: ""
+      });
+    }
+
+    // Facebook deliverables
+    if (selectedPlatforms.includes('facebook')) {
+      if (collaborationCosts.facebook.post) {
+        deliverables.push({
+          platform: "facebook",
+          type: "facebook_post",
+          budget: parseFloat(collaborationCosts.facebook.post),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+      if (collaborationCosts.facebook.story) {
+        deliverables.push({
+          platform: "facebook",
+          type: "facebook_story",
+          budget: parseFloat(collaborationCosts.facebook.story),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+    }
+
+    // YouTube deliverables
+    if (selectedPlatforms.includes('youtube')) {
+      if (collaborationCosts.youtube.video) {
+        deliverables.push({
+          platform: "youtube",
+          type: "youtube_long_video",
+          budget: parseFloat(collaborationCosts.youtube.video),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+      if (collaborationCosts.youtube.shorts) {
+        deliverables.push({
+          platform: "youtube",
+          type: "youtube_short",
+          budget: parseFloat(collaborationCosts.youtube.shorts),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+    }
+
+    // LinkedIn deliverables
+    if (selectedPlatforms.includes('linkedin')) {
+      if (collaborationCosts.linkedin.post) {
+        deliverables.push({
+          platform: "linkedin",
+          type: "linkedin_post",
+          budget: parseFloat(collaborationCosts.linkedin.post),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+      if (collaborationCosts.linkedin.article) {
+        deliverables.push({
+          platform: "linkedin",
+          type: "linkedin_article",
+          budget: parseFloat(collaborationCosts.linkedin.article),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+    }
+
+    // Twitter deliverables
+    if (selectedPlatforms.includes('twitter')) {
+      if (collaborationCosts.twitter.post) {
+        deliverables.push({
+          platform: "twitter",
+          type: "twitter_post",
+          budget: parseFloat(collaborationCosts.twitter.post),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+      if (collaborationCosts.twitter.thread) {
+        deliverables.push({
+          platform: "twitter",
+          type: "twitter_thread",
+          budget: parseFloat(collaborationCosts.twitter.thread),
+          quantity: 1,
+          specifications: ""
+        });
+      }
+    }
+
+    // Prepare gender preferences
+    const genderPreferences = openToAllGenders ? [] : [selectedGender];
+
+    return {
+      name: campaignName,
+      description: campaignDescription,
+      category: campaignCategory,
+      deliverableFormat: deliverableText,
+      isPanIndia: panIndiaSelected,
+      cityIds: selectedCities,
+      minAge: parseInt(minAge),
+      maxAge: parseInt(maxAge),
+      isOpenToAllAges: openToAllAges,
+      genderPreferences,
+      isOpenToAllGenders: openToAllGenders,
+      nicheIds: selectedNiches,
+      customInfluencerRequirements: customInfluencerRequirement,
+      performanceExpectations,
+      brandSupport,
+      deliverables
+    };
+  };
+
+  const handleCreateCampaign = async (isInviteOnly: boolean) => {
+    try {
+      const campaignData = prepareCampaignData();
+      const response = await postCampaign(campaignData);
+
+      // Assuming the response contains the campaign ID
+      if (response?.id) {
+        setCampaignId(response.id);
+      }
+
+      // Navigate based on campaign type
+      if (isInviteOnly) {
+        setShowSearchScreen(true);
+      } else {
+        setShowSuccessscreen(true);
+      }
+    } catch (error) {
+      console.error('Failed to create campaign:', error);
+    }
+  };
+
   const handleContinueStep2 = () => {
-    setCurrentStep(3)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!deliverableText.trim()) {
+      newErrors.deliverableText = 'Deliverable format is required'
+      hasError = true
+    } else {
+      newErrors.deliverableText = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(3)
+    }
   }
 
   const handleContinueStep3 = () => {
-    setCurrentStep(4)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!campaignDescription.trim()) {
+      newErrors.campaignDescription = 'Campaign description is required'
+      hasError = true
+    } else {
+      newErrors.campaignDescription = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(4)
+    }
   }
 
   const handleContinueStep4 = () => {
-    setCurrentStep(5)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!openToAllAges) {
+      const minAgeNum = parseInt(minAge)
+      const maxAgeNum = parseInt(maxAge)
+
+      if (minAgeNum > maxAgeNum) {
+        newErrors.maxAge = 'Maximum age must be greater than minimum age'
+        hasError = true
+      } else {
+        newErrors.minAge = ''
+        newErrors.maxAge = ''
+      }
+    } else {
+      newErrors.minAge = ''
+      newErrors.maxAge = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(5)
+    }
   }
 
   const handleContinueStep5 = () => {
-    setCurrentStep(6)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!panIndiaSelected && selectedCities.length === 0) {
+      newErrors.selectedCities = 'Please select at least one city or choose Pan-India'
+      hasError = true
+    } else {
+      newErrors.selectedCities = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(6)
+    }
   }
 
   const handleContinueStep6 = () => {
-    setCurrentStep(7)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    // Check if at least one Instagram cost is filled
+    const hasInstagramCost = collaborationCosts.instagram.reel ||
+                            collaborationCosts.instagram.story ||
+                            collaborationCosts.instagram.post
+
+    if (!hasInstagramCost) {
+      newErrors.collaborationCosts = 'Please add at least one Instagram collaboration cost'
+      hasError = true
+    } else {
+      newErrors.collaborationCosts = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(7)
+    }
   }
 
   const handleContinueStep7 = () => {
-    setCurrentStep(8)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!performanceExpectations.trim()) {
+      newErrors.performanceExpectations = 'Performance expectations are required'
+      hasError = true
+    } else {
+      newErrors.performanceExpectations = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(8)
+    }
   }
 
   const handleContinueStep8 = () => {
-    setCurrentStep(9)
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!brandSupport.trim()) {
+      newErrors.brandSupport = 'Brand support information is required'
+      hasError = true
+    } else {
+      newErrors.brandSupport = ''
+    }
+
+    setErrors(newErrors)
+    if (!hasError) {
+      setCurrentStep(9)
+    }
   }
 
   const handleContinueStep9 = () => {
@@ -137,55 +525,39 @@ const CreateCampaignPage = () => {
     'Business + Finance'
   ]
 
-  // Age and Niche options
+  // Age and Gender options
   const ageOptions = Array.from({ length: 48 }, (_, i) => (18 + i).toString())
   const genderOptions = ['Male', 'Female', 'Others']
-  const nicheOptions = ['Fashion', 'Movies', 'Food', 'Finance', 'Electronics', 'Pets']
 
-  // Popular Cities for location selection
-  const popularCities = [
-    'Mumbai', 'Delhi NCR', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Surat',
-    'Chennai', 'Kolkata', 'Pune', 'Jaipur', 'Lucknow', 'Chandigarh', 'Gurugram'
-  ]
-
-  // All cities list for search functionality
-  const allCities = [
-    'Mumbai', 'Delhi NCR', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Surat',
-    'Chennai', 'Kolkata', 'Pune', 'Jaipur', 'Lucknow', 'Chandigarh', 'Gurugram',
-    'Agra', 'Amritsar', 'Aurangabad', 'Bhopal', 'Bhubaneswar', 'Coimbatore',
-    'Dehradun', 'Faridabad', 'Ghaziabad', 'Goa', 'Guwahati', 'Indore',
-    'Jabalpur', 'Kanpur', 'Kochi', 'Madurai', 'Meerut', 'Nagpur', 'Nashik',
-    'Patna', 'Rajkot', 'Ranchi', 'Shimla', 'Thiruvananthapuram', 'Udaipur',
-    'Vadodara', 'Varanasi', 'Vijayawada', 'Visakhapatnam'
-  ]
-
-  // Filter cities based on search query
-  const filteredCities = searchQuery.length > 0
-    ? allCities.filter(city =>
-        city.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !selectedCities.includes(city)
-      )
+  // Filter cities based on search query - use API results
+  const filteredCities = searchQuery.length > 0 && searchedCity
+    ? searchedCity.filter(city => !selectedCities.includes(city.id))
     : []
 
   // Handler functions for preferences
-  const handleNicheToggle = (niche: string) => {
+  const handleNicheToggle = (nicheId: string) => {
     setSelectedNiches(prev =>
-      prev.includes(niche)
-        ? prev.filter(n => n !== niche)
-        : [...prev, niche]
+      prev.includes(nicheId)
+        ? prev.filter(n => n !== nicheId)
+        : [...prev, nicheId]
     )
   }
 
+  console.log({selectedNiches});
+
   // Handler functions for location selection
-  const handleCityToggle = (city: string) => {
+  const handleCityToggle = (cityId: number) => {
     if (panIndiaSelected) {
       setPanIndiaSelected(false)
     }
     setSelectedCities(prev =>
-      prev.includes(city)
-        ? prev.filter(c => c !== city)
-        : [...prev, city]
+      prev.includes(cityId)
+        ? prev.filter(c => c !== cityId)
+        : [...prev, cityId]
     )
+    if (errors.selectedCities) {
+      setErrors({ ...errors, selectedCities: '' })
+    }
   }
 
   const handlePanIndiaToggle = () => {
@@ -193,10 +565,13 @@ const CreateCampaignPage = () => {
     if (!panIndiaSelected) {
       setSelectedCities([])
     }
+    if (errors.selectedCities) {
+      setErrors({ ...errors, selectedCities: '' })
+    }
   }
 
-  const handleRemoveCity = (cityToRemove: string) => {
-    setSelectedCities(prev => prev.filter(city => city !== cityToRemove))
+  const handleRemoveCity = (cityId: number) => {
+    setSelectedCities(prev => prev.filter(id => id !== cityId))
   }
 
   const handleCollaborationCostChange = (platform: string, type: string, value: string) => {
@@ -207,6 +582,9 @@ const CreateCampaignPage = () => {
         [type]: value
       }
     }))
+    if (errors.collaborationCosts) {
+      setErrors({ ...errors, collaborationCosts: '' })
+    }
   }
 
   const handlePlatformToggle = (platform: string) => {
@@ -265,7 +643,7 @@ const CreateCampaignPage = () => {
       <div className="flex flex-col justify-start flex-1 px-4 py-8">
         {/* Progress Indicator */}
         {showSuccessscreen ? (
-          <SuccessfulScreen onBack={() => setShowSuccessscreen(false)}/>
+          <SuccessfulScreen heading="Campaign Created" subHeading="Your campaign has been created successfully" onBack={() => setShowSuccessscreen(false)}/>
         ) : showInviteScreen ? (
           <InviteInfluencersScreen
             selectedInfluencers={selectedInfluencers}
@@ -277,6 +655,7 @@ const CreateCampaignPage = () => {
               setShowInviteScreen(false);
               setShowSearchScreen(true);
             }}
+            campaignId={campaignId}
             campaignData={{
               name: campaignName,
               brandName: brandName,
@@ -287,7 +666,6 @@ const CreateCampaignPage = () => {
         ) : showSearchScreen ? (
           <SearchScreen
             onBack={() => setShowSearchScreen(false)}
-            searchQuery="Search for Influencers"
             onInfluencersSelected={(influencers) => {
               setSelectedInfluencers(influencers);
               setShowSearchScreen(false);
@@ -323,9 +701,17 @@ const CreateCampaignPage = () => {
                   type="text"
                   placeholder="Enter Your Full Name*"
                   value={campaignName}
-                  onChange={(e) => setCampaignName(e.target.value)}
-                  className="mt-2 w-full py-4 px-6 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white placeholder-gray-400"
+                  onChange={(e) => {
+                    setCampaignName(e.target.value)
+                    if (errors.campaignName) {
+                      setErrors({ ...errors, campaignName: '' })
+                    }
+                  }}
+                  className={`mt-2 w-full py-4 px-6 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white placeholder-gray-400 ${errors.campaignName ? 'border-red-500' : 'border-gray-300'}`}
                 />
+                {errors.campaignName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.campaignName}</p>
+                )}
               </div>
 
               {/* Campaign Category Field */}
@@ -377,14 +763,22 @@ const CreateCampaignPage = () => {
                   <textarea
                     placeholder="Add Deliverable*"
                     value={deliverableText}
-                    onChange={(e) => setDeliverableText(e.target.value)}
+                    onChange={(e) => {
+                      setDeliverableText(e.target.value)
+                      if (errors.deliverableText) {
+                        setErrors({ ...errors, deliverableText: '' })
+                      }
+                    }}
                     maxLength={1000}
-                    className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#999] bg-white placeholder-[#999] resize-none"
+                    className={`w-full h-64 p-4 border rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white placeholder-[#999] resize-none ${errors.deliverableText ? 'border-red-500' : 'border-[#E4E4E4]'}`}
                   />
                   <div className="absolute -bottom-4 right-3 text-xs text-black">
                     {deliverableText?.length}/1,000
                   </div>
                 </div>
+                {errors.deliverableText && (
+                  <p className="text-red-500 text-xs mt-1">{errors.deliverableText}</p>
+                )}
               </div>
             </div>
 
@@ -420,14 +814,22 @@ const CreateCampaignPage = () => {
                   <textarea
                     placeholder="Add Campaign Detail*"
                     value={campaignDescription}
-                    onChange={(e) => setCampaignDescription(e.target.value)}
+                    onChange={(e) => {
+                      setCampaignDescription(e.target.value)
+                      if (errors.campaignDescription) {
+                        setErrors({ ...errors, campaignDescription: '' })
+                      }
+                    }}
                     maxLength={10000}
-                    className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#999] bg-white placeholder-[#999] resize-none"
+                    className={`w-full h-64 p-4 border rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black bg-white placeholder-[#999] resize-none ${errors.campaignDescription ? 'border-red-500' : 'border-[#E4E4E4]'}`}
                   />
                   <div className="absolute bottom-3 right-3 text-xs text-black">
                     {campaignDescription?.length}/10,000
                   </div>
                 </div>
+                {errors.campaignDescription && (
+                  <p className="text-red-500 text-xs mt-1">{errors.campaignDescription}</p>
+                )}
               </div>
             </div>
 
@@ -491,8 +893,13 @@ const CreateCampaignPage = () => {
                   <div className="relative">
                       <select
                         value={maxAge}
-                        onChange={(e) => setMaxAge(e.target.value)}
-                        className="w-full py-4 px-6 border border-[#E4E4E4] rounded-full font-bold text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent appearance-none bg-white text-black"
+                        onChange={(e) => {
+                          setMaxAge(e.target.value)
+                          if (errors.maxAge) {
+                            setErrors({ ...errors, maxAge: '' })
+                          }
+                        }}
+                        className={`w-full py-4 px-6 border rounded-full font-bold text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent appearance-none bg-white text-black ${errors.maxAge ? 'border-red-500' : 'border-[#E4E4E4]'}`}
                       >
                         {ageOptions.map((age) => (
                           <option key={age} value={age}>{age} yr Old</option>
@@ -505,6 +912,10 @@ const CreateCampaignPage = () => {
                     <p className="text-xs text-black font-bold mt-1 text-center">Maximum Age</p>
                   </div>
                 </div>
+
+                {errors.maxAge && (
+                  <p className="text-red-500 text-xs mt-1">{errors.maxAge}</p>
+                )}
 
                 {/* Open to All Ages Checkbox */}
                 <div className="flex items-center gap-3 justify-center">
@@ -562,23 +973,17 @@ const CreateCampaignPage = () => {
               <div className=''>
                 <h3 className="font-bold text-black mb-4">Any Specific influencer Niche?</h3>
                 <div className="flex flex-wrap gap-3">
-                  {nicheOptions.map((niche) => (
+                  {brandNiches.map((niche) => (
                     <button
-                      key={niche}
-                      onClick={() => handleNicheToggle(niche)}
+                      key={niche.id}
+                      onClick={() => handleNicheToggle(niche.id)}
                       className={`flex items-center gap-2 px-4 py-3 rounded-full border font-medium text-sm transition-colors ${
-                        selectedNiches.includes(niche)
+                        selectedNiches.includes(niche.id)
                           ? 'bg-blue-500 text-white border-blue-500'
                           : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                       }`}
                     >
-                      {niche === 'Fashion' && <Shirt size={18}/>}
-                      {niche === 'Movies' && <Clapperboard size={18}/>}
-                      {niche === 'Food' && <Soup size={18}/>}
-                      {niche === 'Finance' && <Wallet size={18}/>}
-                      {niche === 'Electronics' && <MonitorSmartphone size={18}/>}
-                      {niche === 'Pets' && <PawPrint size={18}/>}
-                      <span>{niche}</span>
+                      <span>{niche.name}</span>
                     </button>
                   ))}
                 </div>
@@ -594,7 +999,7 @@ const CreateCampaignPage = () => {
                       value={customInfluencerRequirement}
                       onChange={(e) => setCustomInfluencerRequirement(e.target.value)}
                       maxLength={10000}
-                      className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-[#999] bg-white placeholder-[#999] resize-none"
+                      className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-black bg-white placeholder-[#999] resize-none"
                     />
                     <div className="absolute -bottom-4 right-3 text-xs text-black">
                       {customInfluencerRequirement?.length}/1,000
@@ -650,9 +1055,9 @@ const CreateCampaignPage = () => {
                 <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 rounded-2xl bg-white shadow-sm">
                   {filteredCities.slice(0, 10).map((city) => (
                     <button
-                      key={city}
+                      key={city.id}
                       onClick={() => {
-                        handleCityToggle(city)
+                        handleCityToggle(city.id)
                         setSearchQuery('')
                       }}
                       disabled={panIndiaSelected}
@@ -660,7 +1065,7 @@ const CreateCampaignPage = () => {
                         panIndiaSelected ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'
                       }`}
                     >
-                      {city}
+                      {city.name}, {city.state}
                     </button>
                   ))}
                 </div>
@@ -672,18 +1077,22 @@ const CreateCampaignPage = () => {
               <div className="w-full max-w-sm mb-6">
                 <h3 className="text-lg font-bold text-black mb-4">Selected Cities</h3>
                 <div className="flex flex-wrap gap-3">
-                  {selectedCities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => handleRemoveCity(city)}
-                      className="flex items-center gap-2 px-4 py-2 bg-theme-primary text-white rounded-full text-sm font-medium transition-colors"
-                    >
-                      <span>{city}</span>
-                      <div className="flex-shrink-0 bg-white rounded-full w-4 h-4 flex items-center justify-center">
-                        <X size={12} className='text-theme-primary'/>
-                      </div>
-                    </button>
-                  ))}
+                  {selectedCities.map((cityId) => {
+                    const city = cities.find(c => c.id === cityId);
+                    if (!city) return null;
+                    return (
+                      <button
+                        key={cityId}
+                        onClick={() => handleRemoveCity(cityId)}
+                        className="flex items-center gap-2 px-4 py-2 bg-theme-primary text-white rounded-full text-sm font-medium transition-colors"
+                      >
+                        <span>{city.name}</span>
+                        <div className="flex-shrink-0 bg-white rounded-full w-4 h-4 flex items-center justify-center">
+                          <X size={12} className='text-theme-primary'/>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -692,12 +1101,13 @@ const CreateCampaignPage = () => {
             <div className="w-full max-w-sm mb-8">
               <h3 className="text-lg font-bold text-black mb-4">Popular Cities</h3>
               <div className="flex flex-wrap gap-3">
-                {popularCities
-                  .filter(city => !selectedCities.includes(city))
+                {cities
+                  .filter(city => !selectedCities.includes(city.id))
+                  .slice(0, 20) // Show first 20 cities from API
                   .map((city) => (
                   <button
-                    key={city}
-                    onClick={() => handleCityToggle(city)}
+                    key={city.id}
+                    onClick={() => handleCityToggle(city.id)}
                     disabled={panIndiaSelected}
                     className={`px-6 py-3 rounded-full border font-medium text-sm transition-colors ${
                       panIndiaSelected
@@ -705,14 +1115,14 @@ const CreateCampaignPage = () => {
                         : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                     }`}
                   >
-                    {city}
+                    {city.name}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Pan-India Option */}
-            <div className="w-full max-w-sm mb-16">
+            <div className="w-full max-w-sm mb-8">
               <div className="flex items-center justify-center gap-3">
                 <label htmlFor="panIndia" className="text-sm font-bold text-black">
                   I want to run this campaign Pan-India
@@ -725,6 +1135,9 @@ const CreateCampaignPage = () => {
                   className="w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
               </div>
+              {errors.selectedCities && (
+                <p className="text-red-500 text-xs mt-2 text-center">{errors.selectedCities}</p>
+              )}
             </div>
 
             {/* Navigation Buttons */}
@@ -756,6 +1169,9 @@ const CreateCampaignPage = () => {
             </div>
 
             <div className="w-full max-w-sm space-y-6">
+                {errors.collaborationCosts && (
+                  <p className="text-red-500 text-xs">{errors.collaborationCosts}</p>
+                )}
                 {/* Instagram Section - Always shown */}
                 <div>
                   <h3 className="text-base font-bold text-black mb-2">Instagram</h3>
@@ -771,7 +1187,7 @@ const CreateCampaignPage = () => {
                         placeholder="Add Amount"
                         value={collaborationCosts.instagram.reel}
                         onChange={(e) => handleCollaborationCostChange('instagram', 'reel', e.target.value)}
-                        className="text-[#999] bg-transparent outline-none"
+                        className="text-black bg-transparent outline-none"
                       />
                     </div>
 
@@ -786,7 +1202,7 @@ const CreateCampaignPage = () => {
                         placeholder="Add Amount"
                         value={collaborationCosts.instagram.story}
                         onChange={(e) => handleCollaborationCostChange('instagram', 'story', e.target.value)}
-                        className="text-[#999] bg-transparent outline-none"
+                        className="text-black bg-transparent outline-none"
                       />
                     </div>
 
@@ -801,7 +1217,7 @@ const CreateCampaignPage = () => {
                         placeholder="Add Amount"
                         value={collaborationCosts.instagram.post}
                         onChange={(e) => handleCollaborationCostChange('instagram', 'post', e.target.value)}
-                        className="text-[#999] bg-transparent outline-none"
+                        className="text-black bg-transparent outline-none"
                       />
                     </div>
                   </div>
@@ -823,7 +1239,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.facebook.post}
                           onChange={(e) => handleCollaborationCostChange('facebook', 'post', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg">
@@ -837,7 +1253,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.facebook.story}
                           onChange={(e) => handleCollaborationCostChange('facebook', 'story', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                     </div>
@@ -859,7 +1275,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.youtube.video}
                           onChange={(e) => handleCollaborationCostChange('youtube', 'video', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg">
@@ -873,7 +1289,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.youtube.shorts}
                           onChange={(e) => handleCollaborationCostChange('youtube', 'shorts', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                     </div>
@@ -895,7 +1311,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.linkedin.post}
                           onChange={(e) => handleCollaborationCostChange('linkedin', 'post', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg">
@@ -909,7 +1325,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.linkedin.article}
                           onChange={(e) => handleCollaborationCostChange('linkedin', 'article', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                     </div>
@@ -931,7 +1347,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.twitter.post}
                           onChange={(e) => handleCollaborationCostChange('twitter', 'post', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-x-2.5 p-4 border border-gray-200 rounded-lg">
@@ -945,7 +1361,7 @@ const CreateCampaignPage = () => {
                           placeholder="Add Amount"
                           value={collaborationCosts.twitter.thread}
                           onChange={(e) => handleCollaborationCostChange('twitter', 'thread', e.target.value)}
-                          className="text-[#999] bg-transparent outline-none"
+                          className="text-black bg-transparent outline-none"
                         />
                       </div>
                     </div>
@@ -1039,14 +1455,22 @@ const CreateCampaignPage = () => {
                 <textarea
                   placeholder="Add Deliverable"
                   value={performanceExpectations}
-                  onChange={(e) => setPerformanceExpectations(e.target.value)}
+                  onChange={(e) => {
+                    setPerformanceExpectations(e.target.value)
+                    if (errors.performanceExpectations) {
+                      setErrors({ ...errors, performanceExpectations: '' })
+                    }
+                  }}
                   maxLength={1000}
-                  className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-[#999] bg-white placeholder-[#999] resize-none"
+                  className={`w-full h-64 p-4 border rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-black bg-white placeholder-[#999] resize-none ${errors.performanceExpectations ? 'border-red-500' : 'border-[#E4E4E4]'}`}
                 />
                 <div className="absolute -bottom-3 right-3 text-xs text-black">
                   {performanceExpectations?.length}/1,000
                 </div>
               </div>
+              {errors.performanceExpectations && (
+                <p className="text-red-500 text-xs mt-1">{errors.performanceExpectations}</p>
+              )}
             </div>
 
             {/* Navigation Buttons */}
@@ -1083,14 +1507,22 @@ const CreateCampaignPage = () => {
                 <textarea
                   placeholder="Add Deliverable"
                   value={brandSupport}
-                  onChange={(e) => setBrandSupport(e.target.value)}
+                  onChange={(e) => {
+                    setBrandSupport(e.target.value)
+                    if (errors.brandSupport) {
+                      setErrors({ ...errors, brandSupport: '' })
+                    }
+                  }}
                   maxLength={500}
-                  className="w-full h-64 p-4 border border-[#E4E4E4] rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-[#999] bg-white placeholder-[#999] resize-none"
+                  className={`w-full h-64 p-4 border rounded-3xl text-sm focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-black bg-white placeholder-[#999] resize-none ${errors.brandSupport ? 'border-red-500' : 'border-[#E4E4E4]'}`}
                 />
                 <div className="absolute -bottom-3 right-3 text-xs text-black">
                   {brandSupport?.length}/500
                 </div>
               </div>
+              {errors.brandSupport && (
+                <p className="text-red-500 text-xs mt-1">{errors.brandSupport}</p>
+              )}
             </div>
 
             {/* Navigation Buttons */}
@@ -1140,168 +1572,242 @@ const CreateCampaignPage = () => {
               <div className="mb-8">
                 <h3 className="font-extrabold text-black mb-3">About Campaign</h3>
                 <p className="text-sm text-black font-medium leading-relaxed">
-                  {campaignDescription || "L'Oréal Paris invites beauty creators to be part of our flagship campaign 'Glow Like Never Before', celebrating skincare and makeup products designed to enhance natural radiance. This campaign focuses on creating engaging, authentic and relatable content that inspires confidence and highlights the science-backed innovation behind our products. Influencers are encouraged to demonstrate real transformations, daily-use beauty routines, and tips that resonate with diverse audiences. Our goal is to drive awareness, showcase product versatility, and build strong engagement with communities who trust their creators for beauty recommendations."}
+                  {campaignDescription}
                 </p>
               </div>
 
               {/* Deliverable Section */}
-              <div className="mb-16">
+              <div className="mb-8">
                 <h3 className="font-extrabold text-black mb-3">Deliverable</h3>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Instagram Reels: 2</span>
-                      <span className="text-black"> (Product tutorial + Glow transformation)</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Instagram Stories: 3</span>
-                      <span className="text-black"> (Unboxing, Q&A polls, live usage)</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Optional Bonus: 1</span>
-                      <span className="text-black"> Carousel Post (before/after look)</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Tone & Style:</span>
-                      <span className="text-black"> Relatable, empowering, natural beauty showcase</span>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm text-black font-medium leading-relaxed whitespace-pre-wrap">
+                  {deliverableText}
+                </p>
               </div>
 
               {/* influencer requirements */}
-              <div className="mb-16">
+              <div className="mb-8">
                 <h3 className="font-extrabold text-black mb-3">Influencer Requirements</h3>
-                <div className="space-y-1">
+                <div className="space-y-2">
+                  {selectedNiches.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                      <div className='text-sm font-bold'>
+                        <span className="text-black">Niche: </span>
+                        <span className="text-black">
+                          {selectedNiches
+                            .map(nicheId => brandNiches.find(n => n.id === nicheId)?.name)
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
                     <div className='text-sm font-bold'>
-                      <span className="text-black">Niche</span>
-                      <span className="text-black"> Beauty, Skincare, Lifestyle</span>
+                      <span className="text-black">Age Range: </span>
+                      <span className="text-black">
+                        {openToAllAges ? 'Open to all ages' : `${minAge} - ${maxAge} years old`}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
                     <div className='text-sm font-bold'>
-                      <span className="text-black">Influencer Demographic</span>
-                      <span className="text-black"> Women, 18–35 years old</span>
+                      <span className="text-black">Gender: </span>
+                      <span className="text-black">
+                        {openToAllGenders ? 'Open to all genders' : selectedGender}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Platform</span>
-                      <span className="text-black"> Instagram (mandatory), TikTok (bonus if available)</span>
+                  {selectedPlatforms.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                      <div className='text-sm font-bold'>
+                        <span className="text-black">Platforms: </span>
+                        <span className="text-black capitalize">{selectedPlatforms.join(', ')}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Follower Range:</span>
-                      <span className="text-black"> {"10K – 200K (micro & mid-tier influencers preferred)"}</span>
+                  )}
+                  {customInfluencerRequirement && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                      <div className='text-sm font-bold'>
+                        <span className="text-black">Custom Requirements: </span>
+                        <span className="text-black">{customInfluencerRequirement}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
                {/* Active Regions */}
-              <div className="mb-16">
+              <div className="mb-8">
                 <h3 className="font-extrabold text-black mb-3">Active Regions</h3>
-                <p className='font-bold text-sm'>Mumbai, Delhi NCR, Banglore</p>
+                <p className='font-bold text-sm'>
+                  {panIndiaSelected
+                    ? 'Pan-India'
+                    : selectedCities
+                        .map(cityId => cities.find(c => c.id === cityId)?.name)
+                        .filter(Boolean)
+                        .join(', ')
+                  }
+                </p>
               </div>
 
                {/* rewards compensation */}
-               <div className="mb-16">
+               <div className="mb-8">
                 <h3 className="font-extrabold text-black mb-3">Rewards/Compensation</h3>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Fixed collaboration fee (₹20,000 – ₹50,000 depending on reach)</span>
+                <div className="space-y-2">
+                  {/* Instagram Costs */}
+                  {(collaborationCosts.instagram.reel || collaborationCosts.instagram.story || collaborationCosts.instagram.post) && (
+                    <div>
+                      <p className='text-sm font-bold text-black mb-1'>Instagram:</p>
+                      <div className="ml-4 space-y-1">
+                        {collaborationCosts.instagram.reel && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Reel: ₹{collaborationCosts.instagram.reel}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.instagram.story && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Story: ₹{collaborationCosts.instagram.story}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.instagram.post && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Post: ₹{collaborationCosts.instagram.post}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Product PR kit included (delivered before campaign start)</span>
+                  )}
+
+                  {/* Facebook Costs */}
+                  {selectedPlatforms.includes('facebook') && (collaborationCosts.facebook.post || collaborationCosts.facebook.story) && (
+                    <div>
+                      <p className='text-sm font-bold text-black mb-1'>Facebook:</p>
+                      <div className="ml-4 space-y-1">
+                        {collaborationCosts.facebook.post && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Post: ₹{collaborationCosts.facebook.post}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.facebook.story && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Story: ₹{collaborationCosts.facebook.story}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Performance-based bonus for top 10% performing creators</span>
+                  )}
+
+                  {/* YouTube Costs */}
+                  {selectedPlatforms.includes('youtube') && (collaborationCosts.youtube.video || collaborationCosts.youtube.shorts) && (
+                    <div>
+                      <p className='text-sm font-bold text-black mb-1'>YouTube:</p>
+                      <div className="ml-4 space-y-1">
+                        {collaborationCosts.youtube.video && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Video: ₹{collaborationCosts.youtube.video}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.youtube.shorts && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Shorts: ₹{collaborationCosts.youtube.shorts}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Follower Range:</span>
-                      <span className="text-black"> {"10K – 200K (micro & mid-tier influencers preferred)"}</span>
+                  )}
+
+                  {/* LinkedIn Costs */}
+                  {selectedPlatforms.includes('linkedin') && (collaborationCosts.linkedin.post || collaborationCosts.linkedin.article) && (
+                    <div>
+                      <p className='text-sm font-bold text-black mb-1'>LinkedIn:</p>
+                      <div className="ml-4 space-y-1">
+                        {collaborationCosts.linkedin.post && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Post: ₹{collaborationCosts.linkedin.post}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.linkedin.article && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Article: ₹{collaborationCosts.linkedin.article}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Twitter Costs */}
+                  {selectedPlatforms.includes('twitter') && (collaborationCosts.twitter.post || collaborationCosts.twitter.thread) && (
+                    <div>
+                      <p className='text-sm font-bold text-black mb-1'>X (Twitter):</p>
+                      <div className="ml-4 space-y-1">
+                        {collaborationCosts.twitter.post && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Post: ₹{collaborationCosts.twitter.post}</span>
+                            </div>
+                          </div>
+                        )}
+                        {collaborationCosts.twitter.thread && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
+                            <div className='text-sm font-bold'>
+                              <span className="text-black">Thread: ₹{collaborationCosts.twitter.thread}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* performance expectorations */}
-              <div className="mb-16">
-                <h3 className="font-extrabold text-black mb-3">Performance Expectorations</h3>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Target Avg. Reach per influencer:</span>
-                      <span className="text-black"> 100K+</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Expected Engagement Rate:</span>
-                      <span className="text-black"> {">4%"}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Tracking via UTM links + platform insights</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="mb-8">
+                <h3 className="font-extrabold text-black mb-3">Performance Expectations</h3>
+                <p className="text-sm text-black font-medium leading-relaxed whitespace-pre-wrap">
+                  {performanceExpectations}
+                </p>
               </div>
 
               {/* brand support */}
               <div className="mb-16">
                 <h3 className="font-extrabold text-black mb-3">Brand Support</h3>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Content brief + brand guidlines provided</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Dedicated campaign manager for smooth coordination</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-black rounded-full mt-2"></div>
-                    <div className='text-sm font-bold'>
-                      <span className="text-black">Access to brand assets (logos, product images, music snippets)</span>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-sm text-black font-medium leading-relaxed whitespace-pre-wrap">
+                  {brandSupport}
+                </p>
               </div>
             </div>
 
@@ -1379,14 +1885,24 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="fixed bottom-0 left-0 right-0 p- bg-white border-t border-gray-200">
+            <div className="fixed bottom-4 px-4 left-0 right-0 bg-white">
               {/* Upload Button */}
             {campaignPostingOption === 'open' && (
-              <ArrowFilledButton text='Upload As open for all' onClick={() => setShowSuccessscreen(true)} textCenter={true}/>
+              <ArrowFilledButton
+                text={isPostingCampaign ? 'Creating Campaign...' : 'Upload As open for all'}
+                onClick={() => handleCreateCampaign(false)}
+                textCenter={true}
+                disabled={isPostingCampaign}
+              />
             )}
 
             {campaignPostingOption === 'invite' && (
-              <ArrowFilledButton text='Invite Influencers' onClick={() => setShowSearchScreen(true)} textCenter={true}/>
+              <ArrowFilledButton
+                text={isPostingCampaign ? 'Creating Campaign...' : 'Invite Influencers'}
+                onClick={() => handleCreateCampaign(true)}
+                textCenter={true}
+                disabled={isPostingCampaign}
+              />
             )}
             </div>
           </> 

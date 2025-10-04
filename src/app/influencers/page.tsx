@@ -5,7 +5,6 @@ import TopInfluencerCard from '@/components/influencer/TopInfluencerCard'
 import AppHeader from '@/layout/AppHeader'
 
 const InfluencerPage = () => {
-
   return (
     <div>
         <div className="header">

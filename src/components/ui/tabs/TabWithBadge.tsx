@@ -10,11 +10,11 @@ interface TabData {
   content: string | React.ReactNode;
 }
 
-const tabData: TabData[] = [
+const getTabData = (): TabData[] => [
   {
     id: "about",
     label: "About",
-    content: <AboutUsTab bio="Fashion enthusiast & beauty creator | Blending style with self-expression | Collaborating with brands to inspire confidence & creativity."/>,
+    content: <AboutUsTab/>,
   },
   {
     id: "experience",
@@ -62,6 +62,7 @@ const TabContent: React.FC<{ tab: TabData }> = ({ tab }) => (
 
 const TabWithBadge: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("about");
+  const tabData = getTabData();
 
   return (
     <div className="">

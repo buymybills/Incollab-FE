@@ -97,7 +97,7 @@ function useFetchApi<T>({
         if (axios.isAxiosError(error)) {
           if (error?.response?.status === 401) {
             localStorage.clear();
-            window.location.href = "auth/signin";
+            window.location.href = "/auth/signin";
           }
         }
       }

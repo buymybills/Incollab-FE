@@ -1,12 +1,34 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import { useAuthContext } from "@/auth/context/auth-provider";
 import ArrowFilledButton from "@/components/buttons/ArrowFilledButton";
+import useMutationApi from "@/hooks/useMutationApi";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 
-export default function BrandsOtpForm() {
+interface OtpForm {
+    email: string;
+}
+
+interface OtpFormResponse {
+  message: string;
+  accessToken: string;
+  requiresSignup: boolean;
+  verified: boolean;
+  requiresProfileCompletion: boolean;
+}
+
+export default function BrandsOtpForm({email}: OtpForm) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendTimer, setResendTimer] = useState(20);
   const [canResend, setCanResend] = useState(false);
   const inputsRef = useRef<HTMLInputElement[]>([]);
+  const router = useRouter();
+  const {setAccessToken} = useAuthContext();
+
+  const {mutateAsync: verifyOtp, isPending: verifyOtpLoading} = useMutationApi<OtpFormResponse>({
+    endpoint: 'auth/brand/verify-otp',
+    method: 'post',
+  })
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -88,22 +110,39 @@ export default function BrandsOtpForm() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const response = await verifyOtp({
+      email: email,
+      otp: otp.join("")
+    })
+
+    setAccessToken(response?.accessToken, 'brand');
+
+    if(response?.requiresProfileCompletion){
+      router.push('/auth/brands/profile');
+    }
+    else{
+      router.push('/brands')
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+    <div className="flex flex-col flex-1">
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div className="mb-5 sm:mb-8">
+        <div className="mb-5 sm:mb-8 md:text-center">
           <h1 className="mb-0.5 font-bold text-black">
             OTP Verification
           </h1>
           <p className="text-xs text-[#555]">
-            You have received an OTP at dhruvbhatia@gmail.com
+            You have received an OTP at {email}
           </p>
         </div>
         <div>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div>
-                <div className="flex gap-2 sm:gap-4" id="otp-container">
+                <div className="flex gap-3 sm:gap-4" id="otp-container">
                   {otp.map((_, index) => (
                     <input
                       key={index}
@@ -118,7 +157,7 @@ export default function BrandsOtpForm() {
                           inputsRef.current[index] = el;
                         }
                       }}
-                      className="border-2 border-black rounded-full w-14 h-16 flex items-center justify-center text-center font-medium"
+                      className="border-2 border-black rounded-full w-1 flex-1 h-16 flex items-center justify-center text-center font-medium"
                     />
                   ))}
                 </div>
@@ -144,8 +183,8 @@ export default function BrandsOtpForm() {
                   )}
                 </div>
               </div>
-              <div>
-                <ArrowFilledButton text="Continue" textCenter={true}/>
+              <div className="pb-4">
+                <ArrowFilledButton text={verifyOtpLoading ? "Verifying OTP..." : "Continue"} textCenter={true}/>
               </div>
             </div>
           </form>

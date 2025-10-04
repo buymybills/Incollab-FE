@@ -1,5 +1,5 @@
 "use client"
-import { Bell, Home, Plus, Search, User } from "lucide-react";
+import { Home, Megaphone, Plus, Search, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -40,12 +40,12 @@ const BottomTab: React.FC<BottomTabProps> = ({ className, activeTab }) => {
           }
         },
         {
-          id: 'notifications',
-          label: 'Notifications',
-          icon: <Bell size={20} />,
-          isActive: activeTab === 'notifications',
+          id: 'Campaigns',
+          label: 'Campaigns',
+          icon: <Megaphone size={20} />,
+          isActive: activeTab === 'Campaigns',
           onClick: () => {
-            router.push('/influencers/notifications')
+            router.push('/influencers/campaigns')
           }
         },
         {

@@ -2,23 +2,29 @@ import React, { useState } from 'react'
 import { Clock, CheckCircle, X, BadgeX } from 'lucide-react'
 
 interface ProfileStatusAlertProps {
-  status?: 'pending' | 'success' | 'rejected'
+  status?: string
+  isNew?: boolean
   onClose?: () => void
 }
 
-const ProfileStatusAlert = ({ status = 'pending', onClose }: ProfileStatusAlertProps) => {
+const ProfileStatusAlert = ({ status, isNew, onClose }: ProfileStatusAlertProps) => {
   const [isVisible, setIsVisible] = useState(true)
-
+console.log({status})
   const handleClose = () => {
     setIsVisible(false)
     onClose?.()
   }
 
+  // Don't show if isNew is false (notification is old/already seen)
+  if (!isNew && status !== 'pending') {
+    return null
+  }
+
   if (!isVisible) return null
 
-  if (status === 'success') {
+  if (status === 'approved') {
     return (
-      <div className="border-2 border-dashed border-theme-primary bg-theme-primary/10 rounded-xl px-3 py-3">
+      <div className="border-2 mt-4 border-dashed border-theme-primary bg-theme-primary/10 rounded-xl px-3 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">

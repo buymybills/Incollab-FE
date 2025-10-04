@@ -1,22 +1,59 @@
 "use client"
-import BrandsDetailScreen from '@/components/brands/screens/BrandsDetailScreen';
+import CampaignDetailScreen from '@/components/brands/screens/CampaignDetailScreen';
 import CampaignCard from '@/components/common/CampaignCard';
-import { ChevronLeft } from 'lucide-react'
-import React, { useState } from 'react'
+import useFetchApi from '@/hooks/useFetchApi';
+import { Check, ChevronLeft, ClockFading, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Campaign } from '../page';
 
-const filters = ["Applied", "Selected", "Under Review", "Rejected"];
+const filters = ["applied", "selected", "under_review", "rejected"];
+
+interface MyCampaignApplication {
+    id: number;
+    campaignId: number;
+    influencerId: number;
+    status: "applied" | "selected" | "under_review" | "rejected";
+    createdAt: string;
+    updatedAt: string;
+    campaign: Campaign;
+}
 
 const MyCampaignsPage = () => {
-    const [selectedFilter, setSelectedFilter] = useState<string>("Applied");
+    const [selectedFilter, setSelectedFilter] = useState<string>("applied");
     const [showCampaignDetail, setShowCampaignDetail] = useState<boolean>(false);
+    const [myCampaignsData, setMyCampaignsData] = useState<MyCampaignApplication[]>([]);
+    const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+    const [selectedApplicationStatus, setSelectedApplicationStatus] = useState<"applied" | "under_review" | "selected" | "rejected">("applied");
+    const router = useRouter();
+
+    const { data: myCampaigns } = useFetchApi<MyCampaignApplication[]>({
+        endpoint: `influencer/campaigns/my-applications?status=${selectedFilter}`
+    });
+
+    useEffect(() => {
+        if (myCampaigns) {
+            setMyCampaignsData(myCampaigns);
+        }
+    }, [myCampaigns]);
+
+    console.log(myCampaignsData)
+
+    const handleViewCampaignDetail = (campaignId: number, status: "applied" | "under_review" | "selected" | "rejected") => {
+        setSelectedCampaignId(campaignId);
+        setSelectedApplicationStatus(status);
+        setShowCampaignDetail(true);
+        console.log(campaignId)
+    };
+
 
     if(showCampaignDetail){
-        return <BrandsDetailScreen showAppliedStatus={true} appliedStatus={"Applied"} onBack={() => setShowCampaignDetail(false)}/>
+        return <CampaignDetailScreen showAppliedStatus={true} appliedStatus={selectedApplicationStatus} showPopover={true} popOverButton="Withdraw" selectedCampaignId={selectedCampaignId} onBack={() => setShowCampaignDetail(false)} showApplyButton={false}/> 
     }
   return (
     <div className='mt-3 px-4'>
         <div className="back flex items-center gap-x-4">
-            <button><ChevronLeft size={24}/></button>
+            <button onClick={() => router.back()}><ChevronLeft size={24}/></button>
             <span className='font-bold text-xl'>My Campaigns</span>
         </div>
         <div className="filters mt-5 flex items-center gap-x-2 overflow-scroll no-scrollbar">
@@ -28,40 +65,60 @@ const MyCampaignsPage = () => {
                 ))
             }
         </div>
-        <div className="mt-6">
-            <CampaignCard
-                brandLogo="/images/brand/nykaa.svg"
-                title="Glow Like Never Before"
-                brandName="Nykaa"
-                category="Skincare + Makeup"
-                deliverable="2 Instagram reels, 3 story posts"
-                status="Ongoing"
-                showAppliedStatus={true}
-                appliedStatus='Applied'
-                onViewCampaignDetail={() => setShowCampaignDetail(true)}
-            />
-            <CampaignCard
-                brandLogo="/images/brand/nykaa.svg"
-                title="Glow Like Never Before"
-                brandName="Nykaa"
-                category="Skincare + Makeup"
-                deliverable="2 Instagram reels, 3 story posts"
-                status="Ongoing"
-                showAppliedStatus={true}
-                appliedStatus='selected'
-                onViewCampaignDetail={() => setShowCampaignDetail(true)}
-            />
-            <CampaignCard
-                brandLogo="/images/brand/nykaa.svg"
-                title="Glow Like Never Before"
-                brandName="Nykaa"
-                category="Skincare + Makeup"
-                deliverable="2 Instagram reels, 3 story posts"
-                status="Ongoing"
-                showAppliedStatus={true}
-                appliedStatus='underreview'
-                onViewCampaignDetail={() => setShowCampaignDetail(true)}
-            />
+        <div className="mt-6 space-y-4">
+            {myCampaignsData.length > 0 ? (
+                myCampaignsData.map((application) => {
+                    const deliverableText = application.campaign.deliverables
+                        .map(d => `${d.quantity} ${d.platform} ${d.type.replace(/_/g, ' ')}`)
+                        .join(', ');
+
+                    return (
+                        <CampaignCard
+                            key={application.id}
+                            brandLogo={application.campaign.brand.profileImage}
+                            title={application.campaign.name}
+                            brandName={application.campaign.brand.brandName}
+                            category={application.campaign.category}
+                            deliverable={deliverableText}
+                            status={application.campaign.status}
+                            showAppliedStatus={true}
+                            appliedStatus={application.status}
+                            onViewCampaignDetail={() => handleViewCampaignDetail(application.campaign.id, application.status)}
+                        />
+                    );
+                })
+            ) : (
+                <div className='flex flex-col items-center gap-y-6 justify-center min-h-[50vh]'>
+                    <div className='w-32 h-32 rounded-full border-8 border-[#3284F1]/10 flex items-center justify-center'>
+                        {
+                            selectedFilter === 'applied' && (
+                                <Check className='text-[#3284F1]/10' size={100}/>
+                            )
+                        }
+                        {
+                            selectedFilter === 'selected' && (
+                                <Check className='text-[#3284F1]/10' size={100}/>
+                            )
+                        }
+                        {
+                            selectedFilter === 'under_review' && (
+                                <ClockFading className='text-[#3284F1]/10' size={100}/>
+                            )
+                        }
+                        {
+                            selectedFilter === 'rejected' && (
+                                <X className='text-[#3284F1]/10' size={100}/>
+                            )
+                        }
+                    </div>
+                    <p className='text-[#B8D9FF] font-medium text-sm uppercase tracking-wide'>
+                        {selectedFilter === 'applied' && 'NO APPLICATION APPLIED'}
+                        {selectedFilter === 'selected' && 'NO APPLICATION SELECTED'}
+                        {selectedFilter === 'under_review' && 'NO APPLICATION UNDER REVIEW'}
+                        {selectedFilter === 'rejected' && 'NO APPLICATION REJECTED'}
+                    </p>
+                </div>
+            )}
         </div>
     </div>
   )

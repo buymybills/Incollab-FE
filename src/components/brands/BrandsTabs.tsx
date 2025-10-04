@@ -14,7 +14,7 @@ const BrandsTabData: BrandsTabData[] = [
   {
     id: "about",
     label: "About",
-    content: <AboutUsTab bio="Fashion enthusiast & beauty creator | Blending style with self-expression | Collaborating with brands to inspire confidence & creativity."/>,
+    content: <AboutUsTab/>,
   },
   {
     id: "campaigns",

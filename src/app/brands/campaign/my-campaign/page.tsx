@@ -1,18 +1,33 @@
 "use client"
-import BrandsDetailScreen from '@/components/brands/screens/BrandsDetailScreen';
+import BrandsDetailScreen from '@/components/brands/screens/CampaignDetailScreen';
 import CampaignCard from '@/components/common/CampaignCard';
 import { ChevronLeft } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import useFetchApi from '@/hooks/useFetchApi';
+import { Campaign, CampaignDataResponse } from '@/app/influencers/campaigns/page';
 
 const filters = ["Open Campaigns", "Invites Campaigns", "Finished", "Rejected"];
 
 const BrandsCampaignListingPage = () => {
     const [selectedFilter, setSelectedFilter] = useState<string>("Open Campaigns");
     const [showCampaignDetail, setShowCampaignDetail] = useState<boolean>(false);
+    const [campaignsData, setCampaignsData] = useState<Campaign[]>([]);
+    console.log(campaignsData)
+    const {data: myCampaigns} = useFetchApi<CampaignDataResponse>({
+        endpoint: 'influencer/campaigns/my-application',
+    })
+    useEffect(() => {
+        if(myCampaigns){
+            setCampaignsData(myCampaigns?.campaigns)
+        }
+    }, [myCampaigns])
 
     if(showCampaignDetail){
-        return <BrandsDetailScreen showAppliedStatus={true} appliedStatus={"Applied"} onBack={() => setShowCampaignDetail(false)}/>
+        return <BrandsDetailScreen showAppliedStatus={true} appliedStatus={"applied"} onBack={() => setShowCampaignDetail(false)}/>
     }
+
+
+    
   return (
     <div className='mt-3 px-4'>
         <div className="back flex items-center gap-x-4">
