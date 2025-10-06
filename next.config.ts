@@ -19,13 +19,27 @@ const nextConfig = {
     ],
   },
 
-  // redirects added
+  // Add redirects
   async redirects() {
     return [
       {
         source: "/",
         destination: "/auth",
         permanent: false,
+      },
+    ];
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/manifest.json",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/manifest+json",
+          },
+        ],
       },
     ];
   },
