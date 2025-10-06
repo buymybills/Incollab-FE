@@ -62,7 +62,7 @@ const withPWAConfig = withPWA({
   dest: "public",
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
+  disable: false, // Enable service worker in all environments
   sw: "sw.js",
   fallbacks: {
     document: "/offline",
