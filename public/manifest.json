@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "BuyMyBills",
   "short_name": "BuyMyBills",
   "description": "BuyMyBills - Your bill management solution",
@@ -7,18 +8,51 @@
   "background_color": "#ffffff",
   "theme_color": "#0566EA",
   "orientation": "portrait",
+  "categories": ["finance", "utilities", "productivity"],
   "icons": [
     {
-      "src": "/icons/cashkaroo_192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/cashkaro_512x512.jpg",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/IOS 1.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/IOS 2.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/IOS 3.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/IOS 4.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/IOS 5.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ]
 }
