@@ -70,13 +70,13 @@ const BrandSettingPage = () => {
       <div className="px-4 py-6 space-y-6">
         {/* For Influencers Section */}
         <div>
-          <h3 className="text-[#222] font-bold mb-3">For Influencers</h3>
+          <h3 className="text-[#222] font-bold mb-3">For Brands</h3>
           <button
             className="w-full flex items-center justify-between p-4 bg-white border border-[#E4E4E4] rounded-2xl"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" onClick={() => router.push('/brands/campaign/my-campaign')}>
               <Megaphone size={20} className="text-gray-600" />
-              <span className="text-[#555] font-bold">My Campaigns</span>
+              <span className="text-[#555] font-bold">Campaign Management</span>
             </div>
             <ChevronRight size={18} className="text-gray-400" />
           </button>

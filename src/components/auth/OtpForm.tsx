@@ -162,7 +162,9 @@ export default function OtpForm({phone}: OtpForm) {
                           inputsRef.current[index] = el;
                         }
                       }}
-                      className="border-2 border-black rounded-full w-12 flex-1 h-16 flex items-center justify-center text-center font-medium"
+                      className={`border-2 rounded-full w-12 flex-1 h-16 flex items-center justify-center text-center font-medium ${
+                        otp[index] ? "border-black" : "border-[#E4E4E4]"
+                      }`}
                     />
                   ))}
                 </div>

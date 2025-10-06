@@ -23,7 +23,7 @@ const BrandsSignInPage = () => {
     password: ''
   });
 
-  const {mutateAsync: signInMutation} = useMutationApi({
+  const {mutateAsync: signInMutation, isPending: signinMutationLoading} = useMutationApi({
     endpoint: 'auth/brand/login',
     method: 'POST',
     onError(){
@@ -128,14 +128,15 @@ const BrandsSignInPage = () => {
                               />
                           </div>
                           <div className="forgot-password mt-2">
-                              <Link href={"/"} className="font-semibold text-[#222]">Forgot Password?</Link>
+                              <Link href={"/auth/brands/forgot-password"} className="font-semibold text-[#222]">Forgot Password?</Link>
                           </div>
                         </div>
                         <div onClick={handleContinue} className="px-4 pb-4">
                             <ArrowFilledButton 
                                 className="w-full text-center mt-2" 
-                                text="Continue" 
+                                text={signinMutationLoading ? "Logging In..." : "Continue"} 
                                 textCenter={true}
+                                disabled={signinMutationLoading}
                             />
                         </div>
                     </div>
@@ -202,7 +203,7 @@ const BrandsSignInPage = () => {
                     />
                   </div>
                   <div className="forgot-password mb-8 text-center">
-                    <Link href={"/"} className="font-semibold text-[#222]">Forgot Password?</Link>
+                    <Link href={"/auth/brands/forgot-password"} className="font-semibold text-[#222]">Forgot Password?</Link>
                   </div>
                   <div onClick={handleContinue}>
                     <ArrowFilledButton 

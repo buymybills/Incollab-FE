@@ -7,6 +7,7 @@ import ArrowFilledButton from '../buttons/ArrowFilledButton';
 import CampaignCard from '../common/CampaignCard';
 import PopoverComponent from '../common/Popover';
 import CampaignInfluencerCard from '../influencer/cards/CampaignInfluencerCard';
+import useMutationApi from '@/hooks/useMutationApi';
 
 interface Campaign {
   id: string;
@@ -38,9 +39,13 @@ interface CampaignInfluencerDetailScreenProps {
   collaborationRates?: CollaborationRate[];
   campaignExperience?: number;
   campaigns?: Campaign[];
+  campaignName?: string;
   onBack?: () => void;
   onViewProfile?: () => void;
   onStatusChange?: (status: 'Selected' | 'Under Review' | 'Rejected') => void;
+  influencerId?: number;
+  campaignId?: number;
+  applicationId?: number;
 }
 
 const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenProps> = ({
@@ -50,6 +55,7 @@ const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenPro
   location = "Navi Mumbai, Maharashtra",
   profileImage = "/images/user/influencer.svg",
   isVerified = true,
+  status,
   niches = ["Lifestyle", "Fashion", "Beauty", "Accessories"],
   collaborationRates = [
     {
@@ -88,28 +94,93 @@ const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenPro
       status: "Ongoing"
     },
   ],
+  campaignName = "Campaign Name",
   onBack,
   onViewProfile,
-  onStatusChange
+  onStatusChange,
+  campaignId,
+  applicationId
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<'Selected' | 'Under Review' | 'Rejected' | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<'Selected' | 'Under Review' | 'Rejected' | null>(status || null);
 
-  const statusOptions: ('Selected' | 'Under Review' | 'Rejected')[] = ['Selected', 'Under Review', 'Rejected'];
+  // Update currentStatus when status prop changes
+  React.useEffect(() => {
+    if (status) {
+      setCurrentStatus(status);
+    }
+  }, [status]);
 
-  const handleStatusSelect = (newStatus: 'Selected' | 'Under Review' | 'Rejected') => {
+  const getStatusOptions = (): ('Selected' | 'Under Review' | 'Rejected')[] => {
+    // If status is Under Review, only show Selected and Rejected
+    if (currentStatus === 'Under Review') {
+      return ['Selected', 'Rejected'];
+    }
+    // If already Selected or Rejected, don't show any options (status is final)
+    if (currentStatus === 'Selected' || currentStatus === 'Rejected') {
+      return [];
+    }
+    // Initial state - show all options
+    return ['Selected', 'Under Review', 'Rejected'];
+  };
+
+  const statusOptions = getStatusOptions();
+
+  const {mutateAsync: updateApplicationStatus, isPending: isUpdatingStatus} = useMutationApi({
+    endpoint: `campaign/${campaignId}/applications/${applicationId}/status`,
+    method: 'PUT',
+  })
+
+  const mapStatusToApiValue = (status: 'Selected' | 'Under Review' | 'Rejected'): string => {
+    const statusMap: Record<string, string> = {
+      'Selected': 'selected',
+      'Under Review': 'under_review',
+      'Rejected': 'rejected'
+    };
+    return statusMap[status];
+  };
+
+  const handleStatusSelect = async (newStatus: 'Selected' | 'Under Review' | 'Rejected') => {
     if (newStatus === 'Selected') {
       // Show confirmation bottom sheet for "Selected" status
+      setPendingStatus(newStatus);
       setIsBottomSheetOpen(true);
     } else {
       // Directly apply other statuses
-      onStatusChange?.(newStatus);
+      try {
+        await updateApplicationStatus({
+          status: mapStatusToApiValue(newStatus)
+        });
+        setCurrentStatus(newStatus); // Update current status
+        onStatusChange?.(newStatus);
+      } catch (error) {
+        console.error('Error updating application status:', error);
+      }
     }
     setAnchorEl(null); // Close popover
   };
 
+  const handleConfirmSelection = async () => {
+    if (pendingStatus) {
+      try {
+        await updateApplicationStatus({
+          status: mapStatusToApiValue(pendingStatus)
+        });
+        setCurrentStatus(pendingStatus); // Update current status
+        onStatusChange?.(pendingStatus);
+        setIsBottomSheetOpen(false);
+        setPendingStatus(null);
+      } catch (error) {
+        console.error('Error updating application status:', error);
+      }
+    }
+  };
+
   const handleCloseBottomSheet = () => {
     setIsBottomSheetOpen(false);
+    setPendingStatus(null);
   };
 
   const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -128,7 +199,7 @@ const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenPro
           <button onClick={onBack} className="p-1">
             <ChevronLeft size={20} className="text-gray-700" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">{name}</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{campaignName}</h1>
         </div>
         <button
           onClick={onViewProfile}
@@ -183,27 +254,32 @@ const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenPro
                     </div>
                 </div>
             </div>
-            <button className="p-1" onClick={handlePopoverOpen}>
-              <EllipsisVertical className='rotate-90 text-gray-700' />
-            </button>
+            {statusOptions.length > 0 && (
+              <>
+                <button className="p-1" onClick={handlePopoverOpen}>
+                  <EllipsisVertical className='rotate-90 text-gray-700' />
+                </button>
 
-            <PopoverComponent
-              open={Boolean(anchorEl)}
-              anchorEl={anchorEl}
-              onClose={handlePopoverClose}
-            >
-              <div className='w-44 border-2 border-[#E4E4E4] rounded-xl'>
-                {statusOptions.map((statusOption) => (
-                  <button
-                    key={statusOption}
-                    onClick={() => handleStatusSelect(statusOption)}
-                    className={`w-full first:rounded-t-xl py-3 ps-4 text-left text-sm last:border-b-0 hover:bg-gray-50 transition-colors last:rounded-b-xl`}
-                  >
-                    {statusOption}
-                  </button>
-                ))}
-              </div>
-            </PopoverComponent>
+                <PopoverComponent
+                  open={Boolean(anchorEl)}
+                  anchorEl={anchorEl}
+                  onClose={handlePopoverClose}
+                >
+                  <div className='w-44 border-2 border-[#E4E4E4] rounded-xl'>
+                    {statusOptions.map((statusOption) => (
+                      <button
+                        key={statusOption}
+                        onClick={() => handleStatusSelect(statusOption)}
+                        disabled={isUpdatingStatus}
+                        className={`w-full first:rounded-t-xl py-3 ps-4 text-left text-sm last:border-b-0 hover:bg-gray-50 transition-colors last:rounded-b-xl disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {statusOption}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverComponent>
+              </>
+            )}
         </div>
 
         {/* location */}
@@ -300,7 +376,11 @@ const CampaignInfluencerDetailScreen: React.FC<CampaignInfluencerDetailScreenPro
           />
 
           {/* Proceed Button */}
-          <ArrowFilledButton text='Proceed with Selection' textCenter={true}/>
+          <ArrowFilledButton
+            text={isUpdatingStatus ? 'Updating...' : 'Proceed with Selection'}
+            textCenter={true}
+            onClick={handleConfirmSelection}
+          />
         </div>
       </BottomSheet>
     </div>

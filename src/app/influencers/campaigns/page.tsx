@@ -1,6 +1,6 @@
 "use client"
-import CampaignDetailScreen from '@/components/brands/screens/CampaignDetailScreen'
-import CampaignCard from '@/components/common/CampaignCard'
+import ApplicationDetailScreen from '@/components/brands/screens/ApplicationDetailScreen'
+import ApplicationCard from '@/components/common/ApplicationCard'
 import useFetchApi from '@/hooks/useFetchApi'
 import { ChevronDown, ChevronLeft, Filter } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -58,28 +58,43 @@ export interface Campaign {
     deliverables: Deliverable[];
 }
 
-export interface CampaignDataResponse{
-    campaigns: Campaign[]
+interface CampaignResponse {
+    campaigns: Campaign[];
 }
 
 const CampaignsListingPage = () => {
     const [showDetailScreen, setShowDetailScreen] = useState<boolean>(false);
     const [campaignsData, setCampaignsData] = useState<Campaign[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+    const [selectedApplicationStatus, setSelectedApplicationStatus] = useState<string>('');
+    const [selectedAppliedDate, setSelectedAppliedDate] = useState<string>('');
     const router = useRouter();
 
-    const handleViewCampaignDetail = (campaignId: number) => {
+    const handleViewApplicationDetail = (campaignId: number, applicationStatus: string, createdAt: string) => {
         setSelectedCampaignId(campaignId);
+        setSelectedApplicationStatus(applicationStatus);
+        setSelectedAppliedDate(getTimeAgo(createdAt));
         setShowDetailScreen(true);
     };
 
-    const {data: campaigns} = useFetchApi<CampaignDataResponse>({
+    const getTimeAgo = (dateString: string) => {
+        const createdDate = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - createdDate.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (diffInDays === 0) return 'Applied today';
+        if (diffInDays === 1) return 'Applied 1 day ago';
+        return `Applied ${diffInDays} days ago`;
+    };
+
+    const {data: campaigns} = useFetchApi<CampaignResponse>({
         endpoint: 'campaign',
     })
     
     useEffect(() => {
         if(campaigns){
-            setCampaignsData(campaigns?.campaigns)
+            setCampaignsData(campaigns.campaigns)
         }
     }, [campaigns])
 
@@ -87,7 +102,7 @@ const CampaignsListingPage = () => {
   return (
     <>
         {
-            showDetailScreen ? <CampaignDetailScreen showPopover={false} popOverButton="Withdraw" selectedCampaignId={selectedCampaignId} onBack={() => setShowDetailScreen(false)} showApplyButton={true}/> :
+            showDetailScreen ? <ApplicationDetailScreen appliedStatus={selectedApplicationStatus} selectedCampaignId={selectedCampaignId} appliedDate={selectedAppliedDate} onBack={() => setShowDetailScreen(false)}/> :
             <div className='px-4 mt-3'>
                 <div className="back flex items-center gap-x-2">
                     <button onClick={() => router.back()}><ChevronLeft/></button>
@@ -113,15 +128,16 @@ const CampaignsListingPage = () => {
                             .join(', ');
 
                         return (
-                            <CampaignCard
+                            <ApplicationCard
                                 key={campaign.id}
                                 brandLogo={campaign.brand.profileImage}
                                 title={campaign.name}
                                 brandName={campaign.brand.brandName}
                                 category={campaign.category}
                                 deliverable={deliverableText}
-                                status={campaign.status}
-                                onViewCampaignDetail={() => handleViewCampaignDetail(campaign.id)}
+                                onViewApplicationDetail={() => handleViewApplicationDetail(campaign.id, campaign.status, campaign.createdAt)}
+                                appliedStatus={campaign.status}
+                                appliedDate={getTimeAgo(campaign.createdAt)}
                             />
                         );
                     })}

@@ -21,8 +21,7 @@ const InfluencerPage = () => {
                 <TopInfluencerCard name='sneha_s19' image="/images/user/influencer.svg"/>
             </div>
         </div>
-        <div className="post-card px-4 pb-24">
-            <PostCard/>
+        <div className="post-card px-4 pb-32">
             <PostCard/>
         </div>
         <BottomTab activeTab='home' />

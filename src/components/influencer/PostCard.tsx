@@ -227,7 +227,6 @@ const PostCard = ({ posts, refetchPosts }: PostCardProps) => {
       </div>
     )
   }
-  console.log(posts)
 
   // Render all posts
   return (

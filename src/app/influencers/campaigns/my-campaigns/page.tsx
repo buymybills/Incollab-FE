@@ -1,6 +1,6 @@
 "use client"
-import CampaignDetailScreen from '@/components/brands/screens/CampaignDetailScreen';
-import CampaignCard from '@/components/common/CampaignCard';
+import ApplicationAppliedScreen from '@/components/brands/screens/ApplicationAppliedScreen';
+import ApplicationCard from '@/components/common/ApplicationCard';
 import useFetchApi from '@/hooks/useFetchApi';
 import { Check, ChevronLeft, ClockFading, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ const MyCampaignsPage = () => {
     const [myCampaignsData, setMyCampaignsData] = useState<MyCampaignApplication[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
     const [selectedApplicationStatus, setSelectedApplicationStatus] = useState<"applied" | "under_review" | "selected" | "rejected">("applied");
+    const [selectedAppliedDate, setSelectedAppliedDate] = useState<string>('');
     const router = useRouter();
 
     const { data: myCampaigns } = useFetchApi<MyCampaignApplication[]>({
@@ -39,16 +40,28 @@ const MyCampaignsPage = () => {
 
     console.log(myCampaignsData)
 
-    const handleViewCampaignDetail = (campaignId: number, status: "applied" | "under_review" | "selected" | "rejected") => {
+    const getTimeAgo = (dateString: string) => {
+        const createdDate = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - createdDate.getTime();
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (diffInDays === 0) return 'Applied today';
+        if (diffInDays === 1) return 'Applied 1 day ago';
+        return `Applied ${diffInDays} days ago`;
+    };
+
+    const handleViewCampaignDetail = (campaignId: number, status: "applied" | "under_review" | "selected" | "rejected", createdAt: string) => {
         setSelectedCampaignId(campaignId);
         setSelectedApplicationStatus(status);
+        setSelectedAppliedDate(getTimeAgo(createdAt));
         setShowCampaignDetail(true);
         console.log(campaignId)
     };
 
 
     if(showCampaignDetail){
-        return <CampaignDetailScreen showAppliedStatus={true} appliedStatus={selectedApplicationStatus} showPopover={true} popOverButton="Withdraw" selectedCampaignId={selectedCampaignId} onBack={() => setShowCampaignDetail(false)} showApplyButton={false}/> 
+        return <ApplicationAppliedScreen appliedStatus={selectedApplicationStatus} showPopover={true} popOverButton="Withdraw" selectedCampaignId={selectedCampaignId} appliedDate={selectedAppliedDate} onBack={() => setShowCampaignDetail(false)} showApplyButton={false}/>
     }
   return (
     <div className='mt-3 px-4'>
@@ -73,17 +86,16 @@ const MyCampaignsPage = () => {
                         .join(', ');
 
                     return (
-                        <CampaignCard
+                        <ApplicationCard
                             key={application.id}
                             brandLogo={application.campaign.brand.profileImage}
                             title={application.campaign.name}
                             brandName={application.campaign.brand.brandName}
                             category={application.campaign.category}
                             deliverable={deliverableText}
-                            status={application.campaign.status}
-                            showAppliedStatus={true}
                             appliedStatus={application.status}
-                            onViewCampaignDetail={() => handleViewCampaignDetail(application.campaign.id, application.status)}
+                            appliedDate={getTimeAgo(application.createdAt)}
+                            onViewApplicationDetail={() => handleViewCampaignDetail(application.campaign.id, application.status, application.createdAt)}
                         />
                     );
                 })
