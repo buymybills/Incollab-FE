@@ -2,9 +2,9 @@ name: Docker CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
     types: [opened, synchronize, reopened]
 
 env:
@@ -14,7 +14,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    # Skip running on PR if it's only a draft
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
     steps:
       - name: Checkout repository
@@ -24,7 +23,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        # Only push to Docker Hub on main branch, not on PRs
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
@@ -35,7 +33,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          # Only push on main branch
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: |
             buymybills/incollab-fe:latest
@@ -46,286 +43,120 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # Only deploy on push to main, not on PRs
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Server Setup
+      - name: Setup Server Environment
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Updating system packages..."
-            sudo apt-get update
-            
-            echo "Installing Docker..."
-            if ! command -v docker &> /dev/null; then
+            echo "Checking Docker installation..."
+            if ! command -v docker &>/dev/null; then
+              sudo apt-get update -y
               sudo apt-get install -y docker.io
-              sudo systemctl start docker
-              sudo systemctl enable docker
+              sudo systemctl enable --now docker
               sudo usermod -aG docker $USER
-              # Make sure we can run docker commands without sudo
               sudo chmod 666 /var/run/docker.sock
             fi
-            
-            echo "Installing Nginx..."
-            sudo apt-get install -y nginx
 
-      - name: Setup Nginx Configuration
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Create directory for error pages
-            sudo mkdir -p /usr/share/nginx/html
-
-            # Create 403 error page
-            cat << 'HTMLEOF' | sudo tee /usr/share/nginx/html/403.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Mobile App Only</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; text-align: center; }
-        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Mobile App Only</h1>
-        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
-        <p>You can still access our:</p>
-        <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
-    </div>
-</body>
-</html>
-HTMLEOF
-            # Enable Nginx debug logging
-            sudo sed -i 's/error_log \/var\/log\/nginx\/error.log;/error_log \/var\/log\/nginx\/error.log debug;/' /etc/nginx/nginx.conf
-            
-            # First, create the error pages
-            sudo mkdir -p /usr/share/nginx/html
-            cat << 'HTMLEOF' | sudo tee /usr/share/nginx/html/403.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Mobile App Only</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; text-align: center; }
-        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Mobile App Only</h1>
-        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
-        <p>You can still access our:</p>
-        <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
-    </div>
-</body>
-</html>
-HTMLEOF
-
-            # Create Nginx configuration
-            cat << 'EOF' | sudo tee /etc/nginx/sites-available/incollab-fe
-server {
-                listen 80;
-                server_name collabkaroo.buymybills.in;
-                
-                # Debug logging
-                access_log /var/log/nginx/incollab-access.log;
-                error_log /var/log/nginx/incollab-error.log debug;
-                
-                # Gzip compression
-                gzip on;
-                gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-
-                # Health check endpoint
-                location /health {
-                    access_log off;
-                    return 200 "healthy\n";
-                }
-
-                # Terms and Privacy Policy - allow desktop access
-                location ~ ^/(terms|privacy-policy)$ {
-                    proxy_pass http://localhost:3000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                }
-
-                # Main location block with mobile-only restriction
-                location / {
-                    # Check if User-Agent is mobile
-                    if ($http_user_agent !~* "(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino") {
-                        return 403;
-                    }
-
-                    proxy_pass http://localhost:3000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    
-                    # Debug headers
-                    add_header X-Debug-Message "Proxying to Node.js app" always;
-                    
-                    # Increased timeouts
-                    proxy_connect_timeout 60;
-                    proxy_send_timeout 60;
-                    proxy_read_timeout 60;
-                }
-
-                # Custom 403 error page for non-mobile access
-                error_page 403 /403.html;
-                location = /403.html {
-                    internal;
-                    add_header Content-Type text/html;
-                    return 403 "<!DOCTYPE html>
-<html>
-<head>
-    <title>Mobile App Only</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        .container { max-width: 600px; margin: 0 auto; text-align: center; }
-        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class=\"container\">
-        <h1>Mobile App Only</h1>
-        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
-        <p>You can still access our:</p>
-        <p><a href=\"/terms\">Terms and Conditions</a> | <a href=\"/privacy-policy\">Privacy Policy</a></p>
-    </div>
-</body>
-</html>";
-                }
-
-                # General error handling
-                error_page 404 500 502 503 504 /error.html;
-                location = /error.html {
-                    internal;
-                    add_header Content-Type text/plain;
-                    return 500 "Error Details:
-Status: $status
-Request: $request
-Host: $host
-User Agent: $http_user_agent
-Remote Addr: $remote_addr";
-                }
-                }
-}
-EOF
-            
-            # Remove existing symlink if it exists
-            sudo rm -f /etc/nginx/sites-enabled/incollab-fe
-            
-            # Create new symlink
-            sudo ln -s /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/incollab-fe
-            
-            # Remove default config if it exists
-            sudo rm -f /etc/nginx/sites-enabled/default
-            
-            # Verify Nginx config and restart
-            sudo nginx -t
-            
-            # If test passes, restart Nginx
-            if [ $? -eq 0 ]; then
-                sudo systemctl restart nginx
-                echo "Nginx configuration test passed and service restarted"
-                
-                # Check if Nginx is running
-                if sudo systemctl is-active --quiet nginx; then
-                    echo "Nginx is running"
-                else
-                    echo "Error: Nginx is not running"
-                    sudo systemctl status nginx
-                    exit 1
-                fi
-                
-                # Test connection to Node.js app
-                echo "Testing connection to Node.js app..."
-                curl -I http://localhost:3000 || echo "Warning: Could not connect to Node.js app"
-            else
-                echo "Nginx configuration test failed"
-                exit 1
+            echo "Checking Nginx installation..."
+            if ! command -v nginx &>/dev/null; then
+              sudo apt-get install -y nginx
             fi
 
-      - name: Deploy Container
+            echo "Creating Nginx error pages and config..."
+            sudo mkdir -p /usr/share/nginx/html
+
+            cat <<'HTML' | sudo tee /usr/share/nginx/html/403.html > /dev/null
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile App Only</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+    a { color: #007bff; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <h1>Mobile App Only</h1>
+  <p>This application is designed for mobile devices only.</p>
+  <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
+</body>
+</html>
+HTML
+
+            cat <<'NGINX' | sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null
+server {
+    listen 80;
+    server_name collabkaroo.buymybills.in;
+
+    access_log /var/log/nginx/incollab-access.log;
+    error_log /var/log/nginx/incollab-error.log;
+
+    location /health {
+        return 200 "healthy\n";
+    }
+
+    # Allow /terms and /privacy-policy
+    location ~ ^/(terms|privacy-policy)$ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Block non-mobile browsers for other routes
+    location / {
+        if ($http_user_agent !~* "(android|iphone|ipad|ipod|blackberry|iemobile|kindle|mobile|silk|opera mini)") {
+            return 403;
+        }
+
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    error_page 403 /403.html;
+    location = /403.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+}
+NGINX
+
+            sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t && sudo systemctl reload nginx
+
+      - name: Deploy Docker Container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Create app directory for logs and configs
-            sudo mkdir -p /opt/incollab-fe/logs
-            sudo chown -R ubuntu:ubuntu /opt/incollab-fe
-            
-            # Stop and remove existing container
+            echo "Deploying new container..."
+            docker pull buymybills/incollab-fe:latest
+
             docker stop incollab-fe || true
             docker rm incollab-fe || true
-            
-            # Pull and run new container
-            docker pull buymybills/incollab-fe:latest
+
             docker run -d \
               --name incollab-fe \
               --restart unless-stopped \
               -p 3000:3000 \
               -e NODE_ENV=production \
               -e HOSTNAME="0.0.0.0" \
-              -v /opt/incollab-fe/logs:/app/logs \
               buymybills/incollab-fe:latest
-              
-            # Clean up old images
+
             docker system prune -f
 
-      - name: Verify Deployment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Check if container is running
-            if ! docker ps | grep -q incollab-fe; then
-              echo "Container is not running!"
-              exit 1
-            fi
-            
-            # Check container health
-            if [ "$(docker inspect -f '{{.State.Status}}' incollab-fe)" != "running" ]; then
-              echo "Container is not healthy!"
-              exit 1
-            fi
-            
-            echo "Deployment verified successfully!"
-            # Pull the latest image
-            sudo docker pull buymybills/incollab-fe:latest
-            
-            # Stop and remove existing container
-            sudo docker stop incollab-fe || true
-            sudo docker rm incollab-fe || true
-            
-            # Run new container
-            sudo docker run -d \
-              --name incollab-fe \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              buymybills/incollab-fe:latest
-            
-            # Cleanup old images
-            sudo docker system prune -f
+            echo "Verifying container status..."
+            docker ps | grep incollab-fe && echo "Container running successfully!"
