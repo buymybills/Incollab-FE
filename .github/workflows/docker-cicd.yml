@@ -69,26 +69,11 @@ jobs:
             echo "Creating Nginx error pages and config..."
             sudo mkdir -p /usr/share/nginx/html
 
-            cat <<'HTML' | sudo tee /usr/share/nginx/html/403.html > /dev/null
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Mobile App Only</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
-    a { color: #007bff; text-decoration: none; margin: 0 10px; }
-  </style>
-</head>
-<body>
-  <h1>Mobile App Only</h1>
-  <p>This application is designed for mobile devices only.</p>
-  <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
-</body>
-</html>
-HTML
+            # Create 403 error page with escaped quotes
+            echo "<!DOCTYPE html><html><head><title>Mobile App Only</title><style>body{font-family:Arial,sans-serif;margin:40px;text-align:center}a{color:#007bff;text-decoration:none;margin:0 10px}</style></head><body><h1>Mobile App Only</h1><p>This application is designed for mobile devices only.</p><p><a href=\"/terms\">Terms and Conditions</a> | <a href=\"/privacy-policy\">Privacy Policy</a></p></body></html>" | sudo tee /usr/share/nginx/html/403.html > /dev/null
 
-            cat <<'NGINX' | sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null
-server {
+            # Create Nginx configuration
+            echo 'server {
     listen 80;
     server_name collabkaroo.buymybills.in;
 
@@ -128,8 +113,7 @@ server {
         root /usr/share/nginx/html;
         internal;
     }
-}
-NGINX
+}' | sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null
 
             sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
