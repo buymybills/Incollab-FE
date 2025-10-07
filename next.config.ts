@@ -2,6 +2,7 @@ import withPWA from "next-pwa";
 import type { Configuration as WebpackConfig } from "webpack";
 
 const nextConfig = {
+  output: "standalone" as const,
   images: {
     remotePatterns: [
       {
