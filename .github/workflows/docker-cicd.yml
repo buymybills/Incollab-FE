@@ -52,34 +52,59 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Install required packages
+            # Update and install dependencies
             sudo apt-get update -y
-            sudo apt-get install -y docker.io nginx
+            sudo apt-get install -y docker.io nginx certbot python3-certbot-nginx
             sudo systemctl enable --now docker
-            sudo usermod -aG docker $USER
-            sudo chmod 666 /var/run/docker.sock
 
-            # Setup Nginx files
+            # Add EC2 user to docker group for future manual commands
+            sudo usermod -aG docker ${{ secrets.EC2_USER }}
+
+            # Setup static HTML for 403
             sudo mkdir -p /usr/share/nginx/html
             sudo tee /usr/share/nginx/html/403.html > /dev/null << 'EOF'
-            <html><head><title>Mobile Only</title><style>body{font-family:Arial;margin:40px;text-align:center}</style></head><body><h1>Mobile Only</h1><p>Please use a mobile device to access this site.</p><p><a href="/terms">Terms</a> | <a href="/privacy-policy">Privacy</a></p></body></html>
+            <html>
+            <head><title>Mobile Only</title>
+            <style>body{font-family:Arial;margin:40px;text-align:center}</style>
+            </head>
+            <body>
+              <h1>Mobile Only</h1>
+              <p>Please use a mobile device to access this site.</p>
+              <p><a href="/terms">Terms</a> | <a href="/privacy-policy">Privacy</a></p>
+            </body>
+            </html>
             EOF
 
-            # Create Nginx config
+            # Create Nginx configuration for collabkaroo.com
             sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null << 'EOF'
             server {
                 listen 80;
-                server_name collabkaroo.buymybills.in;
-                location /health { return 200 "healthy"; }
+                listen [::]:80;
+                server_name collabkaroo.com www.collabkaroo.com;
+
+                location /health {
+                    return 200 "healthy";
+                }
+
                 location ~ ^/(terms|privacy-policy)$ {
                     proxy_pass http://localhost:3000;
                     proxy_set_header Host $host;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
                 }
+
                 location / {
                     if ($http_user_agent !~* "mobile|android|iphone|ipad|phone") { return 403; }
                     proxy_pass http://localhost:3000;
                     proxy_set_header Host $host;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
                 }
+
                 error_page 403 /403.html;
                 location = /403.html {
                     root /usr/share/nginx/html;
@@ -88,14 +113,25 @@ jobs:
             }
             EOF
 
-            # Enable site and restart Nginx
+            # Enable and test Nginx config
             sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t && sudo systemctl restart nginx
+            sudo nginx -t
+            sudo systemctl restart nginx
 
-            sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t && sudo systemctl reload nginx
+            # Install and configure SSL certificate
+            sudo certbot --nginx \
+              --non-interactive \
+              --agree-tos \
+              --email contact.us@gobuymybills.com \
+              --domains collabkaroo.com,www.collabkaroo.com \
+              --redirect
+
+            # Restart Nginx to apply SSL
+            sudo systemctl restart nginx
+
+            # Setup SSL auto-renewal
+            (crontab -l 2>/dev/null; echo "0 0 1 * * sudo certbot renew --quiet --deploy-hook 'sudo systemctl reload nginx'") | crontab -
 
       - name: Deploy Docker Container
         uses: appleboy/ssh-action@master
