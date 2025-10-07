@@ -79,11 +79,61 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Create directory for error pages
+            sudo mkdir -p /usr/share/nginx/html
+
+            # Create 403 error page
+            cat << 'HTMLEOF' | sudo tee /usr/share/nginx/html/403.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile App Only</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; text-align: center; }
+        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mobile App Only</h1>
+        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
+        <p>You can still access our:</p>
+        <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
+    </div>
+</body>
+</html>
+HTMLEOF
             # Enable Nginx debug logging
             sudo sed -i 's/error_log \/var\/log\/nginx\/error.log;/error_log \/var\/log\/nginx\/error.log debug;/' /etc/nginx/nginx.conf
             
+            # First, create the error pages
+            sudo mkdir -p /usr/share/nginx/html
+            cat << 'HTMLEOF' | sudo tee /usr/share/nginx/html/403.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile App Only</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; text-align: center; }
+        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mobile App Only</h1>
+        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
+        <p>You can still access our:</p>
+        <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
+    </div>
+</body>
+</html>
+HTMLEOF
+
             # Create Nginx configuration
-            echo 'server {
+            cat << 'EOF' | sudo tee /etc/nginx/sites-available/incollab-fe
+server {
                 listen 80;
                 server_name collabkaroo.buymybills.in;
                 
@@ -177,7 +227,8 @@ User Agent: $http_user_agent
 Remote Addr: $remote_addr";
                 }
                 }
-            }' | sudo tee /etc/nginx/sites-available/incollab-fe
+}
+EOF
             
             # Remove existing symlink if it exists
             sudo rm -f /etc/nginx/sites-enabled/incollab-fe
