@@ -101,8 +101,25 @@ jobs:
                     return 200 "healthy\n";
                 }
 
-                # Main location block
+                # Terms and Privacy Policy - allow desktop access
+                location ~ ^/(terms|privacy-policy)$ {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                # Main location block with mobile-only restriction
                 location / {
+                    # Check if User-Agent is mobile
+                    if ($http_user_agent !~* "(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino") {
+                        return 403;
+                    }
+
                     proxy_pass http://localhost:3000;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade $http_upgrade;
@@ -121,8 +138,33 @@ jobs:
                     proxy_read_timeout 60;
                 }
 
-                # Error handling
-                error_page 403 404 500 502 503 504 /error.html;
+                # Custom 403 error page for non-mobile access
+                error_page 403 /403.html;
+                location = /403.html {
+                    internal;
+                    return 403 '<!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Mobile App Only</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                            .container { max-width: 600px; margin: 0 auto; text-align: center; }
+                            .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <h1>Mobile App Only</h1>
+                            <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
+                            <p>You can still access our:</p>
+                            <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
+                        </div>
+                    </body>
+                    </html>';
+                }
+
+                # General error handling
+                error_page 404 500 502 503 504 /error.html;
                 location = /error.html {
                     internal;
                     return 500 "Error Details:
