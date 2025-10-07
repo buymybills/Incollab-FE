@@ -80,7 +80,7 @@ jobs:
             server {
                 listen 80;
                 listen [::]:80;
-                server_name collabkaroo.com www.collabkaroo.com;
+                server_name collabkaroo.buymybills.com;
 
                 location /health {
                     return 200 "healthy";
@@ -123,8 +123,8 @@ jobs:
             sudo certbot --nginx \
               --non-interactive \
               --agree-tos \
-              --email contact.us@gobuymybills.com \
-              --domains collabkaroo.com,www.collabkaroo.com \
+              --email bharti.mishra@gobuymybills.com \
+              --domains collabkaroo.buymybills.com \
               --redirect
 
             # Restart Nginx to apply SSL
