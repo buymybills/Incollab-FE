@@ -142,58 +142,40 @@ jobs:
                 error_page 403 /403.html;
                 location = /403.html {
                     internal;
-                    return 403 '<!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Mobile App Only</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                            .container { max-width: 600px; margin: 0 auto; text-align: center; }
-                            .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <h1>Mobile App Only</h1>
-                            <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
-                            <p>You can still access our:</p>
-                            <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
-                        </div>
-                    </body>
-                    </html>';
+                    add_header Content-Type text/html;
+                    return 403 "<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile App Only</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; text-align: center; }
+        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class=\"container\">
+        <h1>Mobile App Only</h1>
+        <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
+        <p>You can still access our:</p>
+        <p><a href=\"/terms\">Terms and Conditions</a> | <a href=\"/privacy-policy\">Privacy Policy</a></p>
+    </div>
+</body>
+</html>";
                 }
 
                 # General error handling
                 error_page 404 500 502 503 504 /error.html;
                 location = /error.html {
                     internal;
+                    add_header Content-Type text/plain;
                     return 500 "Error Details:
-                    Status: $status
-                    Request: $request
-                    Host: $host
-                    User Agent: $http_user_agent
-                    Remote Addr: $remote_addr
-                    ";
+Status: $status
+Request: $request
+Host: $host
+User Agent: $http_user_agent
+Remote Addr: $remote_addr";
                 }
-                    return 403 '"'"'<!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Mobile App Only</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                            .container { max-width: 600px; margin: 0 auto; text-align: center; }
-                            .button { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <h1>Mobile App Only</h1>
-                            <p>This application is designed for mobile devices only. Please access it through our mobile app or visit from a mobile device.</p>
-                            <p>You can still access our:</p>
-                            <p><a href="/terms">Terms and Conditions</a> | <a href="/privacy-policy">Privacy Policy</a></p>
-                        </div>
-                    </body>
-                    </html>'"'"';
                 }
             }' | sudo tee /etc/nginx/sites-available/incollab-fe
             
