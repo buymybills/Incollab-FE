@@ -64,17 +64,13 @@ jobs:
               sudo apt-get install -y docker.io
               sudo systemctl start docker
               sudo systemctl enable docker
-              sudo usermod -aG docker ubuntu
-              # Reload group membership
-              newgrp docker
+              sudo usermod -aG docker $USER
+              # Make sure we can run docker commands without sudo
+              sudo chmod 666 /var/run/docker.sock
             fi
             
             echo "Installing Nginx..."
             sudo apt-get install -y nginx
-            
-            # Create Nginx directories if they don't exist
-            sudo mkdir -p /etc/nginx/sites-available
-            sudo mkdir -p /etc/nginx/sites-enabled
 
       - name: Setup Nginx Configuration
         uses: appleboy/ssh-action@master
@@ -83,38 +79,29 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Create Nginx configuration with mobile-only access
-            echo 'map $http_user_agent $is_mobile {
-                default 0;
-                ~*(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge\ |maemo|midp|mmp|mobile.+firefox|netfront|opera\ m(ob|in)i|palm(\ os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows\ ce|xda|xiino|android|ipad|playbook|silk 1;
-            }
+            # Enable Nginx debug logging
+            sudo sed -i 's/error_log \/var\/log\/nginx\/error.log;/error_log \/var\/log\/nginx\/error.log debug;/' /etc/nginx/nginx.conf
             
-            map $uri $is_allowed_page {
-                default 0;
-                ~^/terms 1;
-                ~^/privacy-policy 1;
-            }
-            
-            server {
+            # Create Nginx configuration
+            echo 'server {
                 listen 80;
                 server_name collabkaroo.buymybills.in;
                 
-                # Access control based on device type and page
-                if ($is_mobile = 0) {
-                    set $mobile_restricted "T";
-                }
-                if ($is_allowed_page = 0) {
-                    set $mobile_restricted "${mobile_restricted}R";
-                }
-                
-                if ($mobile_restricted = "TR") {
-                    return 403;
-                }
+                # Debug logging
+                access_log /var/log/nginx/incollab-access.log;
+                error_log /var/log/nginx/incollab-error.log debug;
                 
                 # Gzip compression
                 gzip on;
                 gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-                
+
+                # Health check endpoint
+                location /health {
+                    access_log off;
+                    return 200 "healthy\n";
+                }
+
+                # Main location block
                 location / {
                     proxy_pass http://localhost:3000;
                     proxy_http_version 1.1;
@@ -124,11 +111,28 @@ jobs:
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto $scheme;
+                    
+                    # Debug headers
+                    add_header X-Debug-Message "Proxying to Node.js app" always;
+                    
+                    # Increased timeouts
+                    proxy_connect_timeout 60;
+                    proxy_send_timeout 60;
+                    proxy_read_timeout 60;
                 }
-                
-                # Custom error page for mobile restriction
-                error_page 403 /403.html;
-                location = /403.html {
+
+                # Error handling
+                error_page 403 404 500 502 503 504 /error.html;
+                location = /error.html {
+                    internal;
+                    return 500 "Error Details:
+                    Status: $status
+                    Request: $request
+                    Host: $host
+                    User Agent: $http_user_agent
+                    Remote Addr: $remote_addr
+                    ";
+                }
                     return 403 '"'"'<!DOCTYPE html>
                     <html>
                     <head>
@@ -160,8 +164,30 @@ jobs:
             # Remove default config if it exists
             sudo rm -f /etc/nginx/sites-enabled/default
             
-            # Test and reload Nginx
-            sudo nginx -t && sudo systemctl restart nginx
+            # Verify Nginx config and restart
+            sudo nginx -t
+            
+            # If test passes, restart Nginx
+            if [ $? -eq 0 ]; then
+                sudo systemctl restart nginx
+                echo "Nginx configuration test passed and service restarted"
+                
+                # Check if Nginx is running
+                if sudo systemctl is-active --quiet nginx; then
+                    echo "Nginx is running"
+                else
+                    echo "Error: Nginx is not running"
+                    sudo systemctl status nginx
+                    exit 1
+                fi
+                
+                # Test connection to Node.js app
+                echo "Testing connection to Node.js app..."
+                curl -I http://localhost:3000 || echo "Warning: Could not connect to Node.js app"
+            else
+                echo "Nginx configuration test failed"
+                exit 1
+            fi
 
       - name: Deploy Container
         uses: appleboy/ssh-action@master
@@ -170,6 +196,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Create app directory for logs and configs
+            sudo mkdir -p /opt/incollab-fe/logs
+            sudo chown -R ubuntu:ubuntu /opt/incollab-fe
+            
             # Stop and remove existing container
             docker stop incollab-fe || true
             docker rm incollab-fe || true
@@ -182,7 +212,11 @@ jobs:
               -p 3000:3000 \
               -e NODE_ENV=production \
               -e HOSTNAME="0.0.0.0" \
+              -v /opt/incollab-fe/logs:/app/logs \
               buymybills/incollab-fe:latest
+              
+            # Clean up old images
+            docker system prune -f
 
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
