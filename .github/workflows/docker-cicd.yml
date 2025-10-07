@@ -57,7 +57,7 @@ jobs:
             sudo apt-get install -y docker.io nginx certbot python3-certbot-nginx
             sudo systemctl enable --now docker
 
-            # Add EC2 user to docker group for future manual commands
+            # Add EC2 user to docker group
             sudo usermod -aG docker ${{ secrets.EC2_USER }}
 
             # Setup static HTML for 403
@@ -75,12 +75,27 @@ jobs:
             </html>
             EOF
 
-            # Create Nginx configuration for collabkaroo.com
+            # Start Docker container first
+            docker pull buymybills/incollab-fe:latest
+            docker stop incollab-fe || true
+            docker rm incollab-fe || true
+            docker run -d \
+              --name incollab-fe \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=production \
+              -e HOSTNAME="0.0.0.0" \
+              buymybills/incollab-fe:latest
+
+            # Wait a few seconds for container to be ready
+            sleep 5
+
+            # Create basic HTTP-only Nginx configuration
             sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null << 'EOF'
             server {
                 listen 80;
                 listen [::]:80;
-                server_name www.collabkaroo.com collabkaroo.com;
+                server_name collabkaroo.com www.collabkaroo.com;
 
                 location /health {
                     return 200 "healthy";
@@ -113,27 +128,18 @@ jobs:
             }
             EOF
 
-            # Enable and test Nginx config
+            # Enable Nginx site
             sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
             sudo nginx -t
             sudo systemctl restart nginx
 
-            # Install SSL certificate
-            sudo certbot --nginx \
-              --non-interactive \
-              --agree-tos \
-              --email contact.us@gobuymybills.com \
-              --domains collabkaroo.com,www.collabkaroo.com \
-              --redirect \
-              --must-staple
+            # Run Certbot to issue SSL and automatically configure HTTPS
+            sudo certbot --nginx -d collabkaroo.com -d www.collabkaroo.com --non-interactive --agree-tos --email contact.us@gobuymybills.com --redirect
 
-            # Restart Nginx to apply SSL
-            sudo systemctl restart nginx
-
-            # Setup SSL auto-renewal
+            # Ensure SSL auto-renewal
             (crontab -l 2>/dev/null; echo "0 0 1 * * sudo certbot renew --quiet --deploy-hook 'sudo systemctl reload nginx'") | crontab -
-
+ 
       - name: Deploy Docker Container
         uses: appleboy/ssh-action@master
         with:
