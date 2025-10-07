@@ -64,6 +64,14 @@ setup_server() {
 deploy_app() {
     echo_info "Starting deployment..."
     
+    # Ensure we have permission to use Docker
+    if ! docker info > /dev/null 2>&1; then
+        echo_info "Adding current user to docker group..."
+        sudo usermod -aG docker $USER
+        # Reload user groups without logout
+        newgrp docker
+    fi
+    
     # Clean up old PWA files if they exist
     echo_info "Cleaning up old PWA files..."
     rm -f public/sw.js public/workbox-*.js public/fallback-*.js public/worker-*.js || true

@@ -49,15 +49,79 @@ jobs:
     # Only deploy on push to main, not on PRs
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy to EC2
+      - name: First Time Setup
+        if: env.FIRST_DEPLOY == 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /var/www/incollab-fe
-            ./scripts/server.sh deploy
+            # Install Docker if not installed
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker ubuntu
+              newgrp docker
+            fi
+            
+            # Install Nginx if not installed
+            if ! command -v nginx &> /dev/null; then
+              echo "Installing Nginx..."
+              sudo apt-get install -y nginx
+            fi
+
+      - name: Setup Nginx Configuration
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Create Nginx configuration
+            echo 'server {
+                listen 80;
+                server_name collabkaroo.buymybills.in;
+                
+                location / {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }' | sudo tee /etc/nginx/sites-available/incollab-fe
+            
+            sudo ln -s /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/ || true
+            sudo rm /etc/nginx/sites-enabled/default || true
+            sudo nginx -t && sudo systemctl restart nginx
+
+      - name: Deploy Container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Stop and remove existing container
+            docker stop incollab-fe || true
+            docker rm incollab-fe || true
+            
+            # Pull and run new container
+            docker pull buymybills/incollab-fe:latest
+            docker run -d \
+              --name incollab-fe \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=production \
+              -e HOSTNAME="0.0.0.0" \
+              buymybills/incollab-fe:latest
 
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
