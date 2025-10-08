@@ -90,11 +90,19 @@ jobs:
             # Wait a few seconds for container to be ready
             sleep 5
 
-            # Create map configuration for app validation
+            # Create map configuration for app validation (header + cookie + UA)
             sudo tee /etc/nginx/conf.d/app_check.conf > /dev/null << 'EOF'
             map $http_x_collabkaroo_app $is_valid_app {
                 "collabkaroo-app-v1" 1;
                 default 0;
+            }
+            map $http_cookie $is_app_cookie {
+                default 0;
+                ~*ck_collabkaroo_app=1 1;
+            }
+            map $http_user_agent $is_app_ua {
+                default 0;
+                ~*CollabKarooApp 1;
             }
             EOF
 
@@ -174,8 +182,16 @@ jobs:
                     # For testing/debugging, log the app header value
                     add_header X-Debug-App-Header $http_x_collabkaroo_app always;
                     
+                    # Allow if any of: header, cookie, or custom UA
                     if ($is_valid_app = 0) {
-                        return 403;
+                        if ($is_app_cookie = 0) {
+                            if ($is_app_ua = 0) { return 403; }
+                        }
+                    }
+
+                    # Set sticky cookie when header is present so future navigations work
+                    if ($is_valid_app = 1) {
+                        add_header Set-Cookie "ck_collabkaroo_app=1; Path=/; Secure; HttpOnly; SameSite=Lax" always;
                     }
                     
                     proxy_pass http://localhost:3000;
