@@ -182,17 +182,15 @@ jobs:
                     # For testing/debugging, log the app header value
                     add_header X-Debug-App-Header $http_x_collabkaroo_app always;
                     
-                    # Allow if any of: header, cookie, or custom UA
-                    if ($is_valid_app = 0) {
-                        if ($is_app_cookie = 0) {
-                            if ($is_app_ua = 0) { return 403; }
-                        }
-                    }
+                    # Allow if any of: header, cookie, or custom UA (avoid nested if)
+                    set $allow_app 0;
+                    if ($is_valid_app = 1) { set $allow_app 1; }
+                    if ($is_app_cookie = 1) { set $allow_app 1; }
+                    if ($is_app_ua = 1) { set $allow_app 1; }
+                    if ($allow_app = 0) { return 403; }
 
                     # Set sticky cookie when header is present so future navigations work
-                    if ($is_valid_app = 1) {
-                        add_header Set-Cookie "ck_collabkaroo_app=1; Path=/; Secure; HttpOnly; SameSite=Lax" always;
-                    }
+                    if ($is_valid_app = 1) { add_header Set-Cookie "ck_collabkaroo_app=1; Path=/; Secure; HttpOnly; SameSite=Lax" always; }
                     
                     proxy_pass http://localhost:3000;
                     proxy_http_version 1.1;
