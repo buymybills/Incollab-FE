@@ -90,6 +90,14 @@ jobs:
             # Wait a few seconds for container to be ready
             sleep 5
 
+            # Create map configuration for app validation
+            sudo tee /etc/nginx/conf.d/app_check.conf > /dev/null << 'EOF'
+            map $http_x_collabkaroo_app $is_valid_app {
+                "collabkaroo-app-v1" 1;
+                default 0;
+            }
+            EOF
+
             # Create basic HTTP-only Nginx configuration
             sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null << 'EOF'
             server {
@@ -97,50 +105,88 @@ jobs:
                 listen [::]:80;
                 server_name collabkaroo.com www.collabkaroo.com;
 
+                # Debug logging for troubleshooting
+                access_log /var/log/nginx/incollab-access.log;
+                error_log /var/log/nginx/incollab-error.log debug;
+
+                # Health check endpoint that bypasses app check
                 location /health {
-                    return 200 "healthy";
+                    access_log off;
+                    return 200 "healthy\n";
                 }
 
+                # Allow access to terms and privacy without app check
                 location ~ ^/(terms|privacy-policy)$ {
                     proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
                     proxy_set_header Host $host;
                     proxy_set_header Upgrade $http_upgrade;
                     proxy_set_header Connection "upgrade";
+                    proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto $scheme;
+
+                    # Add debug headers
+                    add_header X-Debug-Path $request_uri;
+                    add_header X-Debug-Host $host;
                 }
 
-                # Custom header check for app validation
-                map $http_x_collabkaroo_app $is_valid_app {
-                    "collabkaroo-app-v1" 1;
-                    default 0;
-                }
-
+                # Main application routes with app validation
                 location / {
+                    # For testing/debugging, log the app header value
+                    add_header X-Debug-App-Header $http_x_collabkaroo_app always;
+                    
                     if ($is_valid_app = 0) {
                         return 403;
                     }
                     
                     proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
                     proxy_set_header Host $host;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto $scheme;
+                    
+                    # Increased timeouts for debugging
+                    proxy_connect_timeout 60;
+                    proxy_send_timeout 60;
+                    proxy_read_timeout 60;
                 }
 
                 error_page 403 /403.html;
                 location = /403.html {
                     root /usr/share/nginx/html;
                     internal;
+                    add_header Content-Type text/html;
                 }
             }
             EOF
 
+            # Verify Next.js app is running
+            echo "Checking if Next.js app is responding..."
+            curl -I http://localhost:3000/health || echo "Warning: Next.js app is not responding"
+
             # Enable Nginx site
             sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
             sudo rm -f /etc/nginx/sites-enabled/default
+
+            # Test Nginx configuration
+            echo "Testing Nginx configuration..."
             sudo nginx -t
+
+            # Start/Restart Nginx
+            echo "Restarting Nginx..."
             sudo systemctl restart nginx
+
+            # Verify Nginx is working
+            echo "Testing Nginx proxy..."
+            curl -I -H "X-Collabkaroo-App: collabkaroo-app-v1" http://localhost/health
+            
+            # Check Nginx logs for any errors
+            echo "Recent Nginx errors:"
+            sudo tail -n 20 /var/log/nginx/incollab-error.log
 
             # Run Certbot to issue SSL and automatically configure HTTPS
             sudo certbot --nginx -d collabkaroo.com -d www.collabkaroo.com --non-interactive --agree-tos --email contact.us@gobuymybills.com --redirect
