@@ -131,6 +131,44 @@ jobs:
                     add_header X-Debug-Host $host;
                 }
 
+                # ALWAYS allow Next.js static assets (no app header needed)
+                location ^~ /_next/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /favicon.ico {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /manifest.json {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /sw.js {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location ^~ /icons/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location ^~ /images/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
                 # Main application routes with app validation
                 location / {
                     # For testing/debugging, log the app header value
