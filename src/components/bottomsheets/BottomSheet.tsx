@@ -9,9 +9,11 @@ interface BottomSheetProps {
   children: React.ReactNode
   bottomSheetMinimumHeight?: number
   bottomSheetMaximumHeight?: number
+  zIndexBackdrop?: number
+  zIndexSheet?: number
 }
 
-export default function BottomSheet({ isOpen, onClose, children, bottomSheetMinimumHeight, bottomSheetMaximumHeight }: BottomSheetProps) {
+export default function BottomSheet({ isOpen, onClose, children, bottomSheetMinimumHeight, bottomSheetMaximumHeight, zIndexBackdrop = 40, zIndexSheet = 50 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
   console.log(bottomSheetMinimumHeight)
 
@@ -35,17 +37,18 @@ export default function BottomSheet({ isOpen, onClose, children, bottomSheetMini
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#000]/70 z-40"
+        className="fixed inset-0 bg-[#000]/70"
+        style={{ zIndex: zIndexBackdrop }}
         onClick={onClose}
       />
 
       {/* Bottom Sheet */}
       <div
         ref={sheetRef}
-        className={`fixed bottom-0 w-full left-0 right bg-white shadow-xl z-50 transition-transform duration-300 ease-out rounded-t-3xl
-          }`}
+        className="fixed bottom-0 w-full left-0 right bg-white shadow-xl transition-transform duration-300 ease-out rounded-t-3xl"
         style={{
           height: `${maxHeight}px`,
+          zIndex: zIndexSheet,
         }}
       >
 
