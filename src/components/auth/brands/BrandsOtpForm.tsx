@@ -185,7 +185,7 @@ export default function BrandsOtpForm({email}: OtpForm) {
                   )}
                 </div>
               </div>
-              <div className="pb-4">
+              <div className="fixed bottom-6 w-full left-0 px-4">
                 <ArrowFilledButton text={verifyOtpLoading ? "Verifying OTP..." : "Continue"} textCenter={true}/>
               </div>
             </div>

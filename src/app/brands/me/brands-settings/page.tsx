@@ -68,7 +68,7 @@ const BrandSettingPage = () => {
       </div>
 
       <div className="px-4 py-6 space-y-6">
-        {/* For Influencers Section */}
+        {/* For Brands Section */}
         <div>
           <h3 className="text-[#222] font-bold mb-3">For Brands</h3>
           <button

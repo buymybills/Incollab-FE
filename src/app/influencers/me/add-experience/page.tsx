@@ -1,4 +1,5 @@
 "use client"
+import { useAuthContext } from '@/auth/context/auth-provider'
 import useMutationApi from '@/hooks/useMutationApi'
 import { ChevronLeft, CirclePlus, X } from 'lucide-react'
 import Image from 'next/image'
@@ -28,6 +29,7 @@ interface AddExperienceFormData {
 const AddExperiencePage = () => {
   const router = useRouter()
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
+  const {refetchUser} = useAuthContext();
 
   // Initialize react-hook-form
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<AddExperienceFormData>({
@@ -97,7 +99,10 @@ const AddExperiencePage = () => {
 
   const { mutateAsync: addExperience } = useMutationApi({
     endpoint: 'influencer/experiences',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: () => {
+      refetchUser();
+    }
   })
 
   // Form submission handler

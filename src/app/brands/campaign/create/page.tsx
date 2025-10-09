@@ -1,5 +1,6 @@
 "use client"
 import { NichesData } from '@/app/auth/brands/profile/page'
+import { useAuthContext } from '@/auth/context/auth-provider'
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton'
 import InviteInfluencersScreen from '@/components/screens/InviteInfluencersScreen'
 import SearchScreen from '@/components/screens/SearchScreen'
@@ -61,6 +62,10 @@ const CreateCampaignPage = () => {
   const [selectedInfluencers, setSelectedInfluencers] = useState<Influencer[]>([])
   const [campaignId, setCampaignId] = useState<number | undefined>(undefined)
   const [brandNiches, setBrandNiches] = useState<{ id: string; name: string; description: string; }[]>([])
+
+  const {user} = useAuthContext();
+
+  console.log(user?.profileMedia?.profileImage)
 
   const {data: nichesData} = useFetchApi<NichesData>({
       endpoint: "auth/niches",
@@ -623,8 +628,8 @@ const CreateCampaignPage = () => {
   const CampaignSummary = ({ showDeliverable = false }: { showDeliverable?: boolean }) => (
     <div className="w-full max-w-sm mb-8">
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-          <span className="text-white text-sm font-bold">{"L'ORÉAL"}</span>
+        <div className="w-12 h-12 bg-black rounded-full flex items-center overflow-hidden justify-center relative">
+          <Image src={user?.profileMedia?.profileImage ?? "/default.png"} alt="Brand Logo" fill className='object-cover'/>
         </div>
         <div className="flex-1">
           <h2 className="font-extrabold text-black">{campaignName}</h2>
@@ -787,13 +792,13 @@ const CreateCampaignPage = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleBackToStep1}
-                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
+                  className='bg-white py-5 flex-1 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
                 >
                   Back
                 </button>
                 <button
                   onClick={handleContinueStep2}
-                  className='bg-theme-primary py-5 px-[60px] text-white font-bold text-sm rounded-full'
+                  className='bg-theme-primary flex-1 py-5 px-[60px] text-white font-bold text-sm rounded-full'
                 >
                   Continue
                 </button>
@@ -838,13 +843,13 @@ const CreateCampaignPage = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleBackToStep2}
-                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
+                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full flex-1'
                 >
                   Back
                 </button>
                 <button
                   onClick={handleContinueStep3}
-                  className='bg-theme-primary py-5 px-[60px] text-white font-bold text-sm rounded-full'
+                  className='bg-theme-primary flex-1 py-5 px-[60px] text-white font-bold text-sm rounded-full'
                 >
                   Continue
                 </button>
@@ -1014,13 +1019,13 @@ const CreateCampaignPage = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleBackToStep3}
-                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
+                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full flex-1'
                 >
                   Back
                 </button>
                 <button
                   onClick={handleContinueStep4}
-                  className='bg-theme-primary py-5 px-[60px] text-white font-bold text-sm rounded-full'
+                  className='bg-theme-primary flex-1 py-5 px-[60px] text-white font-bold text-sm rounded-full'
                 >
                   Continue
                 </button>
@@ -1145,13 +1150,13 @@ const CreateCampaignPage = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleBackToStep4}
-                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
+                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full flex-1'
                 >
                   Back
                 </button>
                 <button
                   onClick={handleContinueStep5}
-                  className='bg-theme-primary py-5 px-[60px] text-white font-bold text-sm rounded-full'
+                  className='bg-theme-primary flex-1 py-5 px-[60px] text-white font-bold text-sm rounded-full'
                 >
                   Continue
                 </button>
@@ -1426,13 +1431,13 @@ const CreateCampaignPage = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleBackToStep5}
-                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full'
+                  className='bg-white py-5 px-[60px] text-theme-primary border border-theme-primary font-bold text-sm rounded-full flex-1'
                 >
                   Back
                 </button>
                 <button
                   onClick={handleContinueStep6}
-                  className='bg-theme-primary py-5 px-[60px] text-white font-bold text-sm rounded-full'
+                  className='bg-theme-primary flex-1 py-5 px-[60px] text-white font-bold text-sm rounded-full'
                 >
                   Continue
                 </button>
@@ -1558,7 +1563,7 @@ const CreateCampaignPage = () => {
               {/* Campaign Overview Card */}
               <div className="flex items-start gap-4 mb-8">
                 <div className="relative w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <Image src={"/images/brand/loreal.svg"} alt="Brand Logo" fill className='object-cover'/>
+                  <Image src={user?.profileMedia?.profileImage ?? '/default-avatar.png'} alt="Brand Logo" fill className='object-cover'/>
                 </div>
                 <div className="flex-1">
                   <h2 className="font-extrabold text-black">{campaignName}</h2>
@@ -1836,7 +1841,7 @@ const CreateCampaignPage = () => {
             <div className="w-full max-w-sm mb-8">
               <div className="flex items-start gap-4">
                 <div className="relative w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                  <Image src={"/images/brand/loreal.svg"} alt="Brand Logo" fill className='object-cover'/>
+                  <Image src={user?.profileMedia?.profileImage ?? '/default-avatar.png'} alt="Brand Logo" fill className='object-cover'/>
                 </div>
                 <div className="flex-1">
                   <h2 className="font-extrabold text-black">{campaignName}</h2>

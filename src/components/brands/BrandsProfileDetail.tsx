@@ -8,6 +8,7 @@ import BrandsBottomTab from '../common/BrandsBottomTab'
 import PopoverComponent from '../common/Popover'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ScreenLoader from '../common/ScreenLoader'
 
 interface BrandsProfileDetailProps {
   bannerImage?: string
@@ -67,6 +68,11 @@ const BrandsProfileDetail = ({
     handlePopoverClose();
     router.push('/brands/me/brands-settings');
   };
+
+  if (!user) {
+    return <ScreenLoader />;
+  }
+
   return (
     <div>
       {/* Banner Image */}

@@ -105,7 +105,7 @@ const BrandsCampaignListingPage = () => {
   return (
     <div className='mt-3 px-4'>
         <div className="back flex items-center gap-x-4">
-            <button><ChevronLeft size={24}/></button>
+            <button onClick={() => router.back()}><ChevronLeft size={24}/></button>
             <span className='font-bold text-xl'>Campaign Management</span>
         </div>
         <div className="filters mt-5 flex items-center gap-x-2 overflow-scroll no-scrollbar">

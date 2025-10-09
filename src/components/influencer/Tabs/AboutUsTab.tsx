@@ -245,7 +245,6 @@ const AboutUsTab: React.FC<AboutUsTabProps> = ({
         </div>
 
         {/* Connect Me Here Section */}
-        {user?.socialLinks && Object.values(user.socialLinks).some(link => link) && (
           <div className='border-t border-dashed border-[#E4E4E4] pt-4'>
             <div className='flex items-center justify-between mb-3'>
               <h2 className="text-black font-extrabold text-base">Connect Me Here</h2>
@@ -258,59 +257,48 @@ const AboutUsTab: React.FC<AboutUsTabProps> = ({
               </button>
             </div>
             <div className="flex gap-3">
-              {user.socialLinks.instagram && (
                 <a
-                  href={user.socialLinks.instagram}
+                  href={user?.socialLinks?.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-14 h-14 relative rounded-xl border border-[#E4E4E4] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
                   <Image src="/images/icons/instagram.svg" alt="Instagram" height={32} width={32}/>
                 </a>
-              )}
-              {user.socialLinks.youtube && (
                 <a
-                  href={user.socialLinks.youtube}
+                  href={user?.socialLinks?.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-14 h-14 relative rounded-xl border border-[#E4E4E4] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
                   <Image src="/images/icons/youtube.svg" alt="YouTube" height={32} width={32}/>
                 </a>
-              )}
-              {user.socialLinks.facebook && (
                 <a
-                  href={user.socialLinks.facebook}
+                  href={user?.socialLinks?.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-14 h-14 relative rounded-xl border border-[#E4E4E4] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
                   <Image src="/images/icons/facebook.svg" alt="Facebook" height={32} width={32}/>
                 </a>
-              )}
-              {user.socialLinks.linkedin && (
                 <a
-                  href={user.socialLinks.linkedin}
+                  href={user?.socialLinks?.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-14 h-14 relative rounded-xl border border-[#E4E4E4] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
                   <Image src="/images/icons/linkedin.svg" alt="LinkedIn" height={32} width={32}/>
                 </a>
-              )}
-              {user.socialLinks.twitter && (
                 <a
-                  href={user.socialLinks.twitter}
+                  href={user?.socialLinks?.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-14 h-14 relative rounded-xl border border-[#E4E4E4] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 >
                   <Image src="/images/icons/x-social.svg" alt="X (Twitter)" height={32} width={32}/>
                 </a>
-              )}
             </div>
           </div>
-        )}
       </div>
     </>
   )

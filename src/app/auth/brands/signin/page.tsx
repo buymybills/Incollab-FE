@@ -104,7 +104,11 @@ const BrandsSignInPage = () => {
                           FIND THE RIGHT CREATORS FOR YOUR BRAND
                         </h2>
                         <div className="flex flex-col gap-y-4 pb-4">
-                          <p className="font-bold text-center">Login as Brand</p>
+                        <div className="flex font-semibold items-center justify-center gap-x-4">
+                          <button className="border-b border-theme-primary text-theme-primary">Login as Brand</button>
+                          <span>/</span>
+                          <button onClick={() => router.push('/auth/signin')}>Login as Influencer</button>
+                        </div>
                           <div className="flex flex-col gap-4 px-4">
                               <input 
                                   type="email"
@@ -177,9 +181,11 @@ const BrandsSignInPage = () => {
                 <BrandsOtpForm email={formData.email}/>
               ) : (
                 <div>
-                  <h3 className="font-bold text-black text-center mb-8 text-lg">
-                    Login as Brand
-                  </h3>
+                  <div className="flex gap-2 font-semibold items-center justify-center gap-x-4 mb-4">
+                    <button className="border-b border-theme-primary text-theme-primary">Login as Brand</button>
+                    <span>/</span>
+                    <button onClick={() => router.push('/auth/influencer/signin')}>Login as Influencer</button>
+                  </div>
                   <div className="flex flex-col gap-3 mb-4">
                     <input 
                       type="email"

@@ -1,70 +1,327 @@
 {
-  "id": "/",
-  "name": "Collabkaroo",
-  "short_name": "Collabkaroo",
-  "description": "Collabkaroo - Connect.  Collaborate.  Create.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0566EA",
-  "orientation": "portrait",
-  "categories": ["finance", "utilities", "productivity"],
-  "icons": [
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+    "id": "/",
+    "name": "incollab",
+    "short_name": "incollab",
+    "description": "A Progressive Web App for team collaboration and project management",
+    "categories": [
+      "productivity",
+      "business",
+      "communication",
+      "utilities",
+      "lifestyle"
+    ],
+    "note_taking": {
+      "new_note_url": "/notes/new"
     },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+    "prefer_related_applications": false,
+    "start_url": "/",
+    "scope": "/",
+    "lang": "en",
+    "dir": "ltr",
+    "display": "standalone",
+    "display_override": [
+      "tabbed",
+      "window-controls-overlay",
+      "minimal-ui",
+      "standalone",
+      "fullscreen"
+    ],
+    "tab_strip": {
+      "home_tab": {
+        "scope_patterns": ["/"]
+      }
     },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+    "background_color": "#006FEE",
+    "theme_color": "#006FEE",
+    "orientation": "any",
+    "related_applications": [
+      {
+        "platform": "play",
+        "url": "https://play.google.com/store/apps/details?id=com.incollab.app",
+        "id": "com.incollab.app"
+      },
+      {
+        "platform": "itunes",
+        "url": "https://apps.apple.com/app/incollab/id1234567890",
+        "id": "1234567890"
+      }
+    ],
+    "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+    "scope_extensions": [
+      {
+        "origin": "https://api.incollab.com"
+      },
+      {
+        "origin": "https://cdn.incollab.com"
+      },
+      {
+        "origin": "https://storage.incollab.com"
+      },
+      {
+        "origin": "https://incollab.com"
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "New Project",
+        "short_name": "Project",
+        "description": "Create a new project",
+        "url": "/projects/new",
+        "icons": [
+          {
+            "src": "/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "New Task",
+        "short_name": "Task",
+        "description": "Add a new task",
+        "url": "/tasks/new",
+        "icons": [
+          {
+            "src": "/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "Team Chat",
+        "short_name": "Chat",
+        "description": "Open team chat",
+        "url": "/chat",
+        "icons": [
+          {
+            "src": "/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "New Note",
+        "short_name": "Note",
+        "description": "Create a new note or document",
+        "url": "/notes/new",
+        "icons": [
+          {
+            "src": "/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+          }
+        ]
+      }
+    ],
+    "file_handlers": [
+      {
+        "action": "/import-project",
+        "accept": {
+          "text/csv": [".csv"],
+          "application/json": [".json"],
+          "text/plain": [".txt"]
+        }
+      },
+      {
+        "action": "/import-document",
+        "accept": {
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+            ".docx"
+          ],
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+            ".xlsx"
+          ],
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
+            ".pptx"
+          ],
+          "application/pdf": [".pdf"],
+          "application/msword": [".doc"],
+          "application/vnd.ms-excel": [".xls"]
+        }
+      },
+      {
+        "action": "/notes/open",
+        "accept": {
+          "text/plain": [".txt"],
+          "text/markdown": [".md"],
+          "application/json": [".json"]
+        }
+      }
+    ],
+    "launch_handler": {
+      "client_mode": "focus-existing"
     },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/IOS 1.png",
-      "sizes": "1170x2532",
-      "type": "image/png",
-      "form_factor": "narrow"
+    "share_target": {
+      "action": "/share",
+      "method": "POST",
+      "enctype": "multipart/form-data",
+      "params": {
+        "title": "title",
+        "text": "text",
+        "url": "url",
+        "files": [
+          {
+            "name": "shared_file",
+            "accept": ["image/*", "application/pdf", "text/*", "application/*"]
+          }
+        ]
+      }
     },
-    {
-      "src": "/screenshots/IOS 2.png",
-      "sizes": "1170x2532",
-      "type": "image/png",
-      "form_factor": "narrow"
+    "widgets": [
+      {
+        "name": "Task Overview",
+        "description": "Quick view of your tasks and deadlines",
+        "tag": "task_overview",
+        "template": "task-overview-template",
+        "ms_ac_template": "task-overview-adaptive-card.json",
+        "data": "/api/widget/tasks-overview",
+        "type": "application/json",
+        "screenshots": [
+          {
+            "src": "/images/widget-task-overview.png",
+            "sizes": "320x200",
+            "label": "Task overview widget screenshot"
+          }
+        ]
+      },
+      {
+        "name": "Team Activity",
+        "description": "Recent team activity and updates",
+        "tag": "team_activity",
+        "template": "team-activity-template",
+        "ms_ac_template": "team-activity-adaptive-card.json",
+        "data": "/api/widget/team-activity",
+        "type": "application/json",
+        "screenshots": [
+          {
+            "src": "/images/widget-team-activity.png",
+            "sizes": "320x200",
+            "label": "Team activity widget screenshot"
+          }
+        ]
+      }
+    ],
+    "edge_side_panel": {
+      "preferred_width": 400
     },
-    {
-      "src": "/screenshots/IOS 3.png",
-      "sizes": "1170x2532",
-      "type": "image/png",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "/screenshots/IOS 4.png",
-      "sizes": "1170x2532",
-      "type": "image/png",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "/screenshots/IOS 5.png",
-      "sizes": "1170x2532",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ]
-}
+    "handle_links": "preferred",
+    "protocol_handlers": [
+      {
+        "protocol": "web+incollab",
+        "url": "/handle-protocol?type=%s"
+      },
+      {
+        "protocol": "web+task",
+        "url": "/tasks/open?id=%s"
+      },
+      {
+        "protocol": "web+project",
+        "url": "/projects/open?id=%s"
+      }
+    ],
+    "icons": [
+      {
+        "src": "/icons/icon-32x32.png",
+        "sizes": "32x32",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-48x48.png",
+        "sizes": "48x48",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-72x72.png",
+        "sizes": "72x72",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-96x96.png",
+        "sizes": "96x96",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-128x128.png",
+        "sizes": "128x128",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-144x144.png",
+        "sizes": "144x144",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-152x152.png",
+        "sizes": "152x152",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icons/icon-384x384.png",
+        "sizes": "384x384",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
+    ],
+    "screenshots": [
+      {
+        "src": "/images/screenshots/home.png",
+        "sizes": "1280x720",
+        "type": "image/png",
+        "form_factor": "wide",
+        "label": "Home screen of incollab on desktop"
+      },
+      {
+        "src": "/images/screenshots/home-mobile.png",
+        "sizes": "390x844",
+        "type": "image/png",
+        "form_factor": "narrow",
+        "label": "Home screen of incollab on mobile"
+      },
+      {
+        "src": "/images/screenshots/projects.png",
+        "sizes": "390x844",
+        "type": "image/png",
+        "form_factor": "narrow",
+        "label": "Projects view on mobile"
+      },
+      {
+        "src": "/images/screenshots/tasks.png",
+        "sizes": "390x844",
+        "type": "image/png",
+        "form_factor": "narrow",
+        "label": "Task management screen on mobile"
+      },
+      {
+        "src": "/images/screenshots/dashboard.png",
+        "sizes": "1280x720",
+        "type": "image/png",
+        "form_factor": "wide",
+        "label": "Dashboard view on desktop"
+      }
+    ]
+  }

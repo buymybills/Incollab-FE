@@ -425,6 +425,8 @@ const CampaignDetailPage = () => {
                                 Platform filters coming soon...
                             </div>
                         )}
+                        {/* apply button */}
+                        <button className="fixed bottom-2 bg-theme-primary text-white py-2 rounded-lg mt-4">Apply</button>
                     </div>
                 </div>
             </BottomSheet>

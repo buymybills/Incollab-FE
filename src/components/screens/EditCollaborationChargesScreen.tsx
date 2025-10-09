@@ -189,15 +189,6 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
               { id: 'post', name: 'Post', amount: '' },
             ]
           },
-          {
-            id: 'youtube',
-            name: 'YouTube',
-            icon: '/images/icons/youtube.svg',
-            contentTypes: [
-              { id: 'short', name: 'Short', amount: '' },
-              { id: 'long-video', name: 'Long Video', amount: '' },
-            ]
-          }
         ])
       }
     } else {

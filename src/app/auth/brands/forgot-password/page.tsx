@@ -2,8 +2,11 @@
 import ArrowFilledButton from '@/components/buttons/ArrowFilledButton';
 import React, { useState } from 'react'
 import useMutationApi from '@/hooks/useMutationApi';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 const ForgotPasswordPage = () => {
+    const router = useRouter()
     const [formData, setFormData] = useState({
         email: ''
       });
@@ -24,6 +27,9 @@ const ForgotPasswordPage = () => {
         backgroundRepeat: "no-repeat",
     }}
     >
+        <button onClick={() => router.back()} className='absolute top-4 left-4'>
+            <ArrowLeft/>
+        </button>
         <h3 className='font-bold'>Forgot Password</h3>
         <div className='w-full px-4'>
             <input 

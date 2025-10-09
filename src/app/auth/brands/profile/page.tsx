@@ -431,8 +431,11 @@ const BrandsProfilePage = () => {
                   className={`flex items-center gap-3 px-4 py-3 rounded-full font-medium transition-colors ${
                     watchedSelectedBrandNiches.includes(niche.id)
                       ? "bg-theme-blue text-white"
+                      : watchedSelectedBrandNiches.length >= 5
+                      ? "border border-gray-200 text-gray-400 cursor-not-allowed opacity-50"
                       : "border border-gray-300 text-black hover:border-gray-400"
                   }`}
+                  disabled={watchedSelectedBrandNiches.length >= 5}
                 >
                   {/* <span className="text-lg">{niche.icon}</span> */}
                   <span className='font-bold'>{niche.name}</span>
@@ -447,14 +450,18 @@ const BrandsProfilePage = () => {
 
           {/* Selection Counter and Continue Button */}
           <div className="fixed bottom-6 bg-white w-full left-0 px-4 space-y-4">
-            <p className="text-center font-medium text-gray-700 pt-2">
-              Selected ({watchedSelectedBrandNiches.length}/5)
-            </p>
+            <div className="flex items-center justify-center gap-2 text-sm mb-4">
+              <span className={`font-semibold ${
+                watchedSelectedBrandNiches.length >= 5 ? 'text-red-600' : 'text-gray-600'
+              }`}>
+              Selected {`(${watchedSelectedBrandNiches.length}/5)`}
+              </span>
+            </div>
             <ArrowFilledButton
               text={completeProfileLoading ? "Setting Up Profile..." : "Set Up Your Brand Profile"}
               textCenter={true}
               onClick={handleSubmit(onSubmitStep6)}
-              disabled={completeProfileLoading}
+              disabled={completeProfileLoading || watchedSelectedBrandNiches.length < 1}
             />
           </div>
         </form>
@@ -1163,6 +1170,7 @@ const BrandsProfilePage = () => {
               text="Continue" 
               textCenter={true}
               onClick={handleSubmit(onSubmitStep1)}
+              disabled={!showBrandApproved}
             />
           </div>
         </form>

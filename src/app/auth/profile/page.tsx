@@ -420,7 +420,10 @@ const ProfilePage = () => {
                 <h2 className="text-xl font-bold text-black">
                   {"What's Your Niche?"}
                 </h2>
-                <button onClick={() => setShowCustomNicheBottomSheet(true)} className='flex items-center gap-x-1 text-theme-primary'>
+                <button 
+                  onClick={() => setShowCustomNicheBottomSheet(true)} 
+                  className='flex items-center gap-x-1 text-theme-primary'
+                >
                   <Plus/>
                   <span>Add Custom</span>
                 </button>
@@ -433,9 +436,15 @@ const ProfilePage = () => {
                     <button
                       key={niche.id}
                       onClick={() => handleNicheToggle(niche.id)}
+                      disabled={
+                        !formData.niche.includes(niche.id) && 
+                        formData.niche.length >= 5
+                      }
                       className={`flex items-center gap-3 px-4 py-3 rounded-full font-medium transition-colors ${
                         formData.niche.includes(niche.id)
                           ? "bg-theme-blue text-white"
+                          : formData.niche.length >= 5
+                          ? "border border-gray-200 text-gray-400 cursor-not-allowed opacity-50"
                           : "border border-gray-300 text-black hover:border-gray-400"
                       }`}
                     >
@@ -448,13 +457,22 @@ const ProfilePage = () => {
             </div>
           </div>
 
+
           {/* Continue Button */}
-          <div className="fixed bottom-2 w-full left-0 px-4">
+          <div className="fixed bottom-6 w-full left-0 px-4">
+            {/* Selection Counter */}
+            <div className="flex items-center justify-center gap-2 text-sm mb-4">
+              <span className={`font-semibold ${
+                formData.niche.length >= 5 ? 'text-red-600' : 'text-gray-600'
+              }`}>
+              Selected {`(${formData.niche.length}/5)`}
+              </span>
+            </div>
             <ArrowFilledButton
               text={signupLoading ? "Setting Up..." : "Set Up Your Profile"}
               textCenter={true}
               onClick={handleSignup}
-              disabled={signupLoading}
+              disabled={signupLoading || formData.niche.length < 1}
             />
           </div>
         </div>
@@ -1116,7 +1134,7 @@ const ProfilePage = () => {
         </form>
 
         {/* Continue Button */}
-        <div className="mt-auto">
+        <div className="fixed bottom-6 w-full left-0 px-4">
           <ArrowFilledButton
             text="Continue"
             textCenter={true}

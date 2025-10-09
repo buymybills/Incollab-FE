@@ -1306,6 +1306,7 @@ const VerifyInfluencerPage = () => {
           <div className='border-b border-[#E4E4E4]'>
               <div className="back flex items-center gap-x-3 px-4 py-3">
                   <button onClick={
+                      currentStep === 1 ? () => router.push("/influencers/me") :
                       currentStep === 2 ? handleBackToStep1 :
                       currentStep === 3 ? handleBackToStep2 :
                       currentStep === 4 ? handleBackToStep3 :

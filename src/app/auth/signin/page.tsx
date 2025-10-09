@@ -5,11 +5,13 @@ import OtpForm from '@/components/auth/OtpForm'
 import Image from "next/image"
 import { ChevronDown } from "lucide-react"
 import useMutationApi from "@/hooks/useMutationApi"
+import { useRouter } from "next/navigation"
 
 const SignInPage = () => {
   const [mobileNumber, setMobileNumber] = useState("")
   const [showOtpForm, setShowOtpForm] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const router = useRouter()
 
   const images = [
     "/images/influencer/fashion-signin.svg",
@@ -67,9 +69,11 @@ const SignInPage = () => {
                     <OtpForm phone={mobileNumber}/>
                 ) : (
                     <div className="">
-                        <h2 className="font-bold text-black text-center mb-6">
-                            Login / Signup as Influencer
-                        </h2>
+                        <div className="flex gap-2 font-semibold items-center justify-center gap-x-4 mb-4">
+                          <button onClick={() => router.push('/auth/brands/signin')}>Login as Brand</button>
+                          <span>/</span>
+                          <button className="border-b border-theme-primary text-theme-primary">Login as Influencer</button>
+                        </div>
                         <div className="flex gap-2 mb-6">
                             <div className="flex items-center px-3 gap-1 bg-gray-50 border border-gray-200 rounded-full py-3">
                                 <Image src={"/images/icons/india-flag.svg"} alt="flag" width={20} height={20}/>
@@ -93,6 +97,7 @@ const SignInPage = () => {
                                     className="w-full text-center" 
                                     text={sendOtpLoading ? "Sending OTP..." : "Continue"} 
                                     textCenter={true}
+                                    disabled={sendOtpLoading}
                                 />
                             </div>
                         ) : (

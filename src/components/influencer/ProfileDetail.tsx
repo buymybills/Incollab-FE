@@ -115,7 +115,7 @@ const ProfileDetail = ({
           <div className="flex-1 mb-1">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-xl font-bold text-black">{profileData.name}</h1>
-              {profileData.isVerified && (
+              {user?.verificationStatus?.status === 'pending' && (
                 <div className='relative h-5 w-5'>
                   <Image src="/images/common/verification-badge.svg" alt="verification-badge" fill className='object-cover' />
                 </div>

@@ -32,7 +32,7 @@ const BrandsResetPassword = () => {
   const [signupResponseData, setSignupResponseData] = useState<ForgotPasswordResponse | null>(null)
   const router = useRouter()
   const { verificationKey } = useAuthContext()
-  const [showPasswordChangeScreen, setShowPasswordChangeScreen] = useState<boolean>(true)
+  const [showPasswordChangeScreen, setShowPasswordChangeScreen] = useState<boolean>(false)
 
   const {
     register,
