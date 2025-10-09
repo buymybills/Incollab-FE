@@ -1,0 +1,273 @@
+name: Docker CI/CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: buymybills/incollab-fe
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: buymybills
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            buymybills/incollab-fe:latest
+            buymybills/incollab-fe:${{ github.sha }}
+          cache-from: type=registry,ref=buymybills/incollab-fe:buildcache
+          cache-to: type=registry,ref=buymybills/incollab-fe:buildcache,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Setup Server Environment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Update and install dependencies
+            sudo apt-get update -y
+            sudo apt-get install -y docker.io nginx certbot python3-certbot-nginx
+            sudo systemctl enable --now docker
+
+            # Add EC2 user to docker group
+            sudo usermod -aG docker ${{ secrets.EC2_USER }}
+
+            # Setup static HTML for 403
+            sudo mkdir -p /usr/share/nginx/html
+            sudo tee /usr/share/nginx/html/403.html > /dev/null << 'EOF'
+            <html>
+            <head><title>Mobile Only</title>
+            <style>body{font-family:Arial;margin:40px;text-align:center}</style>
+            </head>
+            <body>
+              <h1>Mobile Only</h1>
+              <p>Please use a mobile device to access this site.</p>
+              <p><a href="/terms">Terms</a> | <a href="/privacy-policy">Privacy</a></p>
+            </body>
+            </html>
+            EOF
+
+            # Start Docker container first
+            docker pull buymybills/incollab-fe:latest
+            docker stop incollab-fe || true
+            docker rm incollab-fe || true
+            docker run -d \
+              --name incollab-fe \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=production \
+              -e HOSTNAME="0.0.0.0" \
+              buymybills/incollab-fe:latest
+
+            # Wait a few seconds for container to be ready
+            sleep 5
+
+            # Create map configuration for app validation (header + cookie + UA)
+            sudo tee /etc/nginx/conf.d/app_check.conf > /dev/null << 'EOF'
+            map $http_x_collabkaroo_app $is_valid_app {
+                "collabkaroo-app-v1" 1;
+                default 0;
+            }
+            map $http_cookie $is_app_cookie {
+                default 0;
+                ~*ck_collabkaroo_app=1 1;
+            }
+            map $http_user_agent $is_app_ua {
+                default 0;
+                ~*CollabKarooApp 1;
+            }
+            EOF
+
+            # Create basic HTTP-only Nginx configuration
+            sudo tee /etc/nginx/sites-available/incollab-fe > /dev/null << 'EOF'
+            server {
+                listen 80;
+                listen [::]:80;
+                server_name collabkaroo.com www.collabkaroo.com;
+
+                # Debug logging for troubleshooting
+                access_log /var/log/nginx/incollab-access.log;
+                error_log /var/log/nginx/incollab-error.log debug;
+
+                # Health check endpoint that bypasses app check
+                location /health {
+                    access_log off;
+                    return 200 "healthy\n";
+                }
+
+                # Allow access to terms and privacy without app check
+                location ~ ^/(terms|privacy-policy)$ {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+
+                    # Add debug headers
+                    add_header X-Debug-Path $request_uri;
+                    add_header X-Debug-Host $host;
+                }
+
+                # ALWAYS allow Next.js static assets (no app header needed)
+                location ^~ /_next/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /favicon.ico {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /manifest.json {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location = /sw.js {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location ^~ /icons/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                location ^~ /images/ {
+                    proxy_pass http://localhost:3000;
+                    proxy_set_header Host $host;
+                    access_log off;
+                }
+
+                # Main application routes with app validation
+                location / {
+                    # For testing/debugging, log the app header value
+                    add_header X-Debug-App-Header $http_x_collabkaroo_app always;
+                    
+                    # Allow if any of: header, cookie, or custom UA (avoid nested if)
+                    set $allow_app 0;
+                    if ($is_valid_app = 1) { set $allow_app 1; }
+                    if ($is_app_cookie = 1) { set $allow_app 1; }
+                    if ($is_app_ua = 1) { set $allow_app 1; }
+                    if ($allow_app = 0) { return 403; }
+
+                    # Set sticky cookie when header is present so future navigations work
+                    if ($is_valid_app = 1) { add_header Set-Cookie "ck_collabkaroo_app=1; Path=/; Secure; HttpOnly; SameSite=Lax" always; }
+                    
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    
+                    # Increased timeouts for debugging
+                    proxy_connect_timeout 60;
+                    proxy_send_timeout 60;
+                    proxy_read_timeout 60;
+                }
+
+                error_page 403 /403.html;
+                location = /403.html {
+                    root /usr/share/nginx/html;
+                    internal;
+                    add_header Content-Type text/html;
+                }
+            }
+            EOF
+
+            # Verify Next.js app is running
+            echo "Checking if Next.js app is responding..."
+            curl -I http://localhost:3000/health || echo "Warning: Next.js app is not responding"
+
+            # Enable Nginx site
+            sudo ln -sf /etc/nginx/sites-available/incollab-fe /etc/nginx/sites-enabled/
+            sudo rm -f /etc/nginx/sites-enabled/default
+
+            # Test Nginx configuration
+            echo "Testing Nginx configuration..."
+            sudo nginx -t
+
+            # Start/Restart Nginx
+            echo "Restarting Nginx..."
+            sudo systemctl restart nginx
+
+            # Verify Nginx is working
+            echo "Testing Nginx proxy..."
+            curl -I -H "X-Collabkaroo-App: collabkaroo-app-v1" http://localhost/health
+            
+            # Check Nginx logs for any errors
+            echo "Recent Nginx errors:"
+            sudo tail -n 20 /var/log/nginx/incollab-error.log
+
+            # Run Certbot to issue SSL and automatically configure HTTPS
+            sudo certbot --nginx -d collabkaroo.com -d www.collabkaroo.com --non-interactive --agree-tos --email contact.us@gobuymybills.com --redirect
+
+            # Ensure SSL auto-renewal
+            (crontab -l 2>/dev/null; echo "0 0 1 * * sudo certbot renew --quiet --deploy-hook 'sudo systemctl reload nginx'") | crontab -
+ 
+      - name: Deploy Docker Container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Deploying new container..."
+            docker pull buymybills/incollab-fe:latest
+
+            docker stop incollab-fe || true
+            docker rm incollab-fe || true
+
+            docker run -d \
+              --name incollab-fe \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -e NODE_ENV=production \
+              -e HOSTNAME="0.0.0.0" \
+              buymybills/incollab-fe:latest
+
+            docker system prune -f
+
+            echo "Verifying container status..."
+            docker ps | grep incollab-fe && echo "Container running successfully!"
