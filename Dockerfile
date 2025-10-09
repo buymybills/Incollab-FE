@@ -23,18 +23,14 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy public files except generated PWA files
-COPY --from=builder /app/public/fonts ./public/fonts
-COPY --from=builder /app/public/icons ./public/icons
-COPY --from=builder /app/public/images ./public/images
-COPY --from=builder /app/public/screenshots ./public/screenshots
-COPY --from=builder /app/public/manifest.json ./public/manifest.json
+# Copy the entire public directory (handles presence/absence of subfolders)
+COPY --from=builder /app/public ./public
 
 # Copy Next.js standalone build
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy PWA generated files last to avoid conflicts
+# Copy PWA generated files last to avoid conflicts (overwrites if present)
 COPY --from=builder /app/public/sw.js ./public/sw.js
 COPY --from=builder /app/public/workbox-*.js ./public/
 COPY --from=builder /app/public/fallback-*.js ./public/
