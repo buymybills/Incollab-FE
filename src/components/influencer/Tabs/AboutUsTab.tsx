@@ -169,16 +169,16 @@ const AboutUsTab: React.FC<AboutUsTabProps> = ({
                 </div>
                 <hr className='border border-dashed border-[#E4E4E4] my-3'/>
                 <div className="prices flex items-center gap-x-10">
-                  {user.collaborationCosts.youtube.shorts && (
+                  {user.collaborationCosts.youtube.short && (
                     <div className="reel flex flex-col gap-y-1">
                       <span className='font-normal text-sm text-black'>Shorts</span>
-                      <span className='font-bold text-black'>{formatPrice(user.collaborationCosts.youtube.shorts)}</span>
+                      <span className='font-bold text-black'>{formatPrice(user.collaborationCosts.youtube.short)}</span>
                     </div>
                   )}
-                  {user.collaborationCosts.youtube.video && (
+                  {user.collaborationCosts.youtube.longVideo && (
                     <div className="reel flex flex-col gap-y-1">
                       <span className='font-normal text-sm text-black'>Long Video</span>
-                      <span className='font-bold text-black'>{formatPrice(user.collaborationCosts.youtube.video)}</span>
+                      <span className='font-bold text-black'>{formatPrice(user.collaborationCosts.youtube.longVideo)}</span>
                     </div>
                   )}
                 </div>

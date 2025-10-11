@@ -134,7 +134,7 @@ export default function OtpForm({phone}: OtpForm) {
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+      <div className="flex flex-col justify-center flex-1 w-full mx-auto">
         <div className="mb-5 sm:mb-8 md:text-center">
           <h1 className="mb-0.5 font-bold text-black">
             OTP Verification

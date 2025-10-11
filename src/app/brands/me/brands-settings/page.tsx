@@ -13,18 +13,23 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import AccountSettingsScreen from '@/components/common/AccountSettingsScreen'
+import { useState } from 'react'
 
 const BrandSettingPage = () => {
   const router = useRouter()
   const { user, logout } = useAuthContext()
+  const [showAccountSettingScreen, setShowAccountSettingScreen] = useState<boolean>(false);
 
   const handleBack = () => {
     router.back()
   }
 
   const handleEditProfile = () => {
-    router.push('/influencers/me/edit-profile')
+    router.push('/brands/me/edit-profile')
   }
+
+  if(showAccountSettingScreen) return <AccountSettingsScreen onClose={() => setShowAccountSettingScreen(false)}/>
 
   return (
     <div className="bg-white min-h-screen">
@@ -112,6 +117,7 @@ const BrandSettingPage = () => {
 
             <div className='px-4'>
                 <button
+                onClick={() => setShowAccountSettingScreen(true)}
                 className="w-full flex items-center justify-between border-b py-4 border-[#E4E4E4]"
                 >
                 <div className="flex items-center gap-3">

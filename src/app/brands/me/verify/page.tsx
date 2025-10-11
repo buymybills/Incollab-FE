@@ -347,11 +347,13 @@ const VerifyBrandPage = () => {
     <>
         <div className="text-center">
                     <div className="relative mb-4 flex items-center justify-center mt-10">
-                        <div className='rounded-full w-32 h-32 relative overflow-hidden'>
-                            <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
-                        </div>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-32">
-                            <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
+                        <div className="relative">
+                            <div className='rounded-full w-32 h-32 relative overflow-hidden'>
+                                <Image src="/images/user/influencer.svg" alt="Influencer" fill className='object-cover' />
+                            </div>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white absolute bottom-1 right-0">
+                                <Image src="/images/common/verification-badge.svg" alt="verification-badge" height={20} width={18}/>
+                            </div>
                         </div>
                     </div>
                     <h2 className="text-xl font-bold text-black">Add verification Badge</h2>
@@ -366,7 +368,7 @@ const VerifyBrandPage = () => {
     <FormProvider {...methods}>
       <form onSubmit={(e) => { e.preventDefault(); handleContinueToStep3(); }}>
         <div className="flex flex-col items-center py-16 px-4 pb-32 space-y-12">
-            <div className="w-full max-w-sm space-y-8">
+            <div className="w-full space-y-8">
                 <div>
                     <h3 className="text-lg font-semibold text-black mb-4">Add Profile Banner*</h3>
                     {watchedBannerImage ? (
@@ -674,7 +676,7 @@ const VerifyBrandPage = () => {
     <FormProvider {...methods}>
       <form onSubmit={(e) => { e.preventDefault(); handleContinueToStep4(); }}>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-6">
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
                 {/* Brand Headquarter Location Section */}
                 <div>
                     <h3 className="text-lg font-semibold text-black mb-4">Brand Headquarter Location?<span className="text-red-500">*</span></h3>
@@ -912,7 +914,7 @@ const VerifyBrandPage = () => {
     <FormProvider {...methods}>
       <form onSubmit={(e) => { e.preventDefault(); handleContinueToStep5(); }}>
         <div className="flex flex-col py-5 px-4 pb-32 space-y-8">
-            <div className="w-full max-w-sm space-y-8">
+            <div className="w-full space-y-8">
                 {/* Company Incorporation Number Document */}
                 <div>
                     <h3 className="text-lg font-semibold text-black mb-4">

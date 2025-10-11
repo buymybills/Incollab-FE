@@ -396,7 +396,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
+        <div className="w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
         <div className='text-[#090A0A] flex items-center justify-between'>
@@ -486,7 +486,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
+        <div className="w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
             <div className='text-[#090A0A] flex items-center justify-between'>
@@ -564,7 +564,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
+        <div className="w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col justify-between px-4 py-8 mt-4 pb-24">
           {/* Header with progress */}
           <div className="">
                     <div className='text-[#090A0A] flex items-center justify-between'>
@@ -658,7 +658,7 @@ const ProfilePage = () => {
         <div className="logo md:block hidden">
           <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
         </div>
-        <div className="max-w-md border w-full md:border md:border-[#E4E4E4] rounded-3xl h-full flex flex-col px-4 py-8 mt-4 pb-24">
+        <div className="border w-full md:border md:border-[#E4E4E4] rounded-3xl h-full flex flex-col px-4 py-8 mt-4 pb-24">
         {/* Header with progress */}
         <div className="">
                   <div className='text-[#090A0A] flex items-center justify-between'>
@@ -992,7 +992,7 @@ const ProfilePage = () => {
       <div className="logo md:block hidden">
         <p className='text-4xl font-black text-theme-blue'>Cloutsy</p>
       </div>
-      <div className="max-w-md w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col px-4 py-8 mt-4">
+      <div className="w-full md:border border-[#E4E4E4] rounded-3xl h-full flex flex-col px-4 py-8 mt-4">
         {/* Header with progress */}
         <div className="">
                   <div className='text-[#090A0A] flex items-center justify-between'>

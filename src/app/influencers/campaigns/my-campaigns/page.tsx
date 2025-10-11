@@ -88,14 +88,14 @@ const MyCampaignsPage = () => {
                     return (
                         <ApplicationCard
                             key={application.id}
-                            brandLogo={application.campaign.brand.profileImage}
-                            title={application.campaign.name}
-                            brandName={application.campaign.brand.brandName}
-                            category={application.campaign.category}
+                            brandLogo={application?.campaign?.brand?.profileImage}
+                            title={application?.campaign?.name}
+                            brandName={application?.campaign?.brand?.brandName}
+                            category={application?.campaign?.category}
                             deliverable={deliverableText}
-                            appliedStatus={application.status}
-                            appliedDate={getTimeAgo(application.createdAt)}
-                            onViewApplicationDetail={() => handleViewCampaignDetail(application.campaign.id, application.status, application.createdAt)}
+                            appliedStatus={application?.status}
+                            appliedDate={getTimeAgo(application?.createdAt)}
+                            onViewApplicationDetail={() => handleViewCampaignDetail(application?.campaign?.id, application?.status, application?.createdAt)}
                         />
                     );
                 })

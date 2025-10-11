@@ -150,7 +150,7 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
             <ChevronLeft size={20} className="text-black" />
           </button>
           <div className="flex flex-col">
-            <h1 className="text-lg font-semibold text-gray-900">{ApplicationDetail.brand.brandName}</h1>
+            <h1 className="text-lg font-semibold text-gray-900">{ApplicationDetail?.brand?.brandName}</h1>
           </div>
         </div>
           <>
@@ -214,16 +214,16 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
         {/* Brand Info Section */}
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-            {ApplicationDetail.brand.profileImage ? (
+            {ApplicationDetail?.brand?.profileImage ? (
               <Image
-                src={ApplicationDetail.brand.profileImage}
-                alt={ApplicationDetail.brand.brandName}
+                src={ApplicationDetail?.brand?.profileImage}
+                alt={ApplicationDetail?.brand?.brandName}
                 fill
                 className="object-cover"
               />
             ) : (
               <span className="text-white font-bold text-sm">
-                {ApplicationDetail.brand.brandName.substring(0, 2).toUpperCase()}
+                {ApplicationDetail?.brand?.brandName.substring(0, 2).toUpperCase()}
               </span>
             )}
           </div>
@@ -231,10 +231,10 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
             <h2 className="text-xl font-bold text-gray-900 mb-1">
               {ApplicationDetail.name}
             </h2>
-            <p className="text-gray-600 text-sm mb-2">{ApplicationDetail.brand.brandName}</p>
+            <p className="text-gray-600 text-sm mb-2">{ApplicationDetail?.brand?.brandName}</p>
             <div className="space-y-1 text-sm text-gray-600">
-              <p><span className="font-medium">Category:</span> {ApplicationDetail.category}</p>
-              <p><span className="font-medium">Deliverable:</span> {ApplicationDetail.deliverableFormat}</p>
+              <p><span className="font-medium">Category:</span> {ApplicationDetail?.category}</p>
+              <p><span className="font-medium">Deliverable:</span> {ApplicationDetail?.deliverableFormat}</p>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
         <div>
           <h3 className="font-bold text-black mb-3">About Campaign</h3>
           <p className="text-black text-sm leading-relaxed font-medium">
-            {ApplicationDetail.description}
+            {ApplicationDetail?.description}
           </p>
         </div>
 
@@ -251,7 +251,7 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
         <div>
           <h3 className="font-bold text-black mb-3">Deliverable</h3>
           <p className="text-black text-sm leading-relaxed font-medium whitespace-pre-wrap">
-            {ApplicationDetail.deliverableFormat}
+            {ApplicationDetail?.deliverableFormat}
           </p>
         </div>
 
@@ -262,26 +262,26 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
             <div className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></span>
               <p className="text-black text-sm font-medium">
-                <span className="font-medium">Age Range:</span> {ApplicationDetail.isOpenToAllAges ? 'Open to all ages' : `${ApplicationDetail.minAge} - ${ApplicationDetail.maxAge} years old`}
+                <span className="font-medium">Age Range:</span> {ApplicationDetail?.isOpenToAllAges ? 'Open to all ages' : `${ApplicationDetail?.minAge} - ${ApplicationDetail?.maxAge} years old`}
               </p>
             </div>
             <div className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></span>
               <p className="text-black text-sm font-medium">
-                <span className="font-medium">Gender:</span> {ApplicationDetail.isOpenToAllGenders ? 'Open to all genders' : ApplicationDetail.genderPreferences.join(', ')}
+                <span className="font-medium">Gender:</span> {ApplicationDetail?.isOpenToAllGenders ? 'Open to all genders' : ApplicationDetail?.genderPreferences.join(', ')}
               </p>
             </div>
             <div className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></span>
               <p className="text-black text-sm font-medium">
-                <span className="font-medium">Region:</span> {ApplicationDetail.isPanIndia ? 'Pan-India' : ApplicationDetail.cities.map(c => c.name).join(', ')}
+                <span className="font-medium">Region:</span> {ApplicationDetail?.isPanIndia ? 'Pan-India' : ApplicationDetail?.cities?.map(c => c.name).join(', ')}
               </p>
             </div>
-            {ApplicationDetail.customInfluencerRequirements && (
+            {ApplicationDetail?.customInfluencerRequirements && (
               <div className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></span>
                 <p className="text-black text-sm font-medium">
-                  <span className="font-medium">Custom Requirements:</span> {ApplicationDetail.customInfluencerRequirements}
+                  <span className="font-medium">Custom Requirements:</span> {ApplicationDetail?.customInfluencerRequirements}
                 </p>
               </div>
             )}
@@ -293,7 +293,7 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
           <h3 className="font-bold text-black mb-3">Campaign Budget</h3>
           <div className="space-y-3">
             {Object.entries(
-              ApplicationDetail.deliverables.reduce((acc, deliverable) => {
+              ApplicationDetail?.deliverables?.reduce((acc, deliverable) => {
                 const platform = deliverable.platform.toLowerCase();
                 if (!acc[platform]) {
                   acc[platform] = [];
@@ -311,8 +311,8 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
                 <div className="prices flex items-center gap-x-10">
                   {platformDeliverables.map((deliverable) => (
                     <div key={deliverable.id} className="flex flex-col gap-y-1">
-                      <span className='font-normal text-sm text-black'>{formatDeliverableType(deliverable.type)}</span>
-                      <span className='font-bold text-black'>{formatPrice(deliverable.budget)}</span>
+                      <span className='font-normal text-sm text-black'>{formatDeliverableType(deliverable?.type)}</span>
+                      <span className='font-bold text-black'>{formatPrice(deliverable?.budget)}</span>
                     </div>
                   ))}
                 </div>
@@ -322,21 +322,21 @@ const ApplicationAppliedScreen = ({ onBack, showApplyButton, appliedStatus, sele
         </div>
 
         {/* Performance Expectations */}
-        {ApplicationDetail.performanceExpectations && (
+        {ApplicationDetail?.performanceExpectations && (
           <div>
             <h3 className="font-bold text-black mb-3">Performance Expectations</h3>
             <p className="text-black text-sm leading-relaxed font-medium whitespace-pre-wrap">
-              {ApplicationDetail.performanceExpectations}
+              {ApplicationDetail?.performanceExpectations}
             </p>
           </div>
         )}
 
         {/* Brand Support */}
-        {ApplicationDetail.brandSupport && (
+        {ApplicationDetail?.brandSupport && (
           <div>
             <h3 className="font-bold text-black mb-3">Brand Support</h3>
             <p className="text-black text-sm leading-relaxed font-medium whitespace-pre-wrap">
-              {ApplicationDetail.brandSupport}
+              {ApplicationDetail?.brandSupport}
             </p>
           </div>
         )}

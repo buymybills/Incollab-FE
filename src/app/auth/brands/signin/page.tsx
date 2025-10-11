@@ -61,7 +61,7 @@ const BrandsSignInPage = () => {
   return (
     <div className="min-h-screen md:flex">
       {/* Mobile Layout */}
-      <div className="md:hidden max-w-md w-full h-dvh text-center flex flex-col items-center mx-auto" style={{backgroundImage: 'url(/images/bg/brands-signin-bg.svg)', backgroundSize: 'cover'}}>
+      <div className="w-full h-dvh text-center flex flex-col items-center" style={{backgroundImage: 'url(/images/bg/brands-signin-bg.svg)', backgroundSize: 'cover'}}>
         <div className="mt-40 w-full relative">
           <div className="logo relative">
             <h2 className="text-theme-primary text-2xl">CollabKaroo</h2>
@@ -155,10 +155,10 @@ const BrandsSignInPage = () => {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex w-full max-w-5xl mx-auto h-[549px] my-auto">
+      <div className="hidden w-full max-w-5xl mx-auto h-[549px] my-auto">
         {/* Left Side - Hero Section */}
         <div className="bg-[#D9D9D9] flex items-start justify-start">
-          <div className="max-w-md p-6">
+          <div className="p-6">
             <h1 className="text-4xl lg:text-[32px] font-bold text-black tracking-tight leading-tight mb-6 w-64">
               FIND THE RIGHT CREATORS FOR YOUR BRAND
             </h1>

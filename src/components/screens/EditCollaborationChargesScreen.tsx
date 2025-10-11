@@ -6,6 +6,7 @@ import { ChevronLeft } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 interface Platform {
   id: string
@@ -38,17 +39,20 @@ interface CollaborationCostsPayload {
   twitter?: PlatformContentCosts
 }
 
-interface EditCollaborationChargesScreenProps {
-  onClose?: () => void
-}
-
 // Define platform key type for better type safety
 type PlatformKey = 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'twitter'
 
-const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScreenProps) => {
+const EditCollaborationChargesScreen = () => {
   const { user, refetchUser } = useAuthContext()
   const router = useRouter()
   const [platforms, setPlatforms] = useState<Platform[]>([])
+  const {
+    formState: { errors },
+    setError,
+    clearErrors,
+  } = useForm({
+    mode: 'onSubmit'
+  })
 
   // Define all available platforms with their default content types
   const availablePlatforms = {
@@ -102,6 +106,10 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
+    onSuccess: () => {
+      refetchUser();
+      router.back();
+    }
   })
 
   // Populate existing collaboration costs from user data
@@ -130,8 +138,8 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
           name: 'YouTube',
           icon: '/images/icons/youtube.svg',
           contentTypes: [
-            { id: 'short', name: 'Short', amount: user.collaborationCosts.youtube.shorts?.toString() || '' },
-            { id: 'long-video', name: 'Long Video', amount: user.collaborationCosts.youtube.video?.toString() || '' },
+            { id: 'short', name: 'Short', amount: user.collaborationCosts.youtube.short?.toString() || '' },
+            { id: 'long-video', name: 'Long Video', amount: user.collaborationCosts.youtube.longVideo?.toString() || '' },
           ]
         })
       }
@@ -218,6 +226,10 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
   }, [user?.collaborationCosts])
 
   const handleAmountChange = (platformId: string, contentTypeId: string, value: string) => {
+    // Clear error for this field when user types
+    const fieldName = `${platformId}-${contentTypeId}`
+    clearErrors(fieldName)
+
     setPlatforms(prev => prev.map(platform => {
       if (platform.id === platformId) {
         return {
@@ -250,32 +262,64 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
 
   const handleSave = async () => {
     try {
+      // Validate all input fields
+      let hasErrors = false
+
+      platforms.forEach(platform => {
+        platform.contentTypes.forEach(contentType => {
+          if (contentType.amount && contentType.amount.trim() !== '') {
+            const fieldName = `${platform.id}-${contentType.id}`
+            const amount = contentType.amount.trim()
+
+            // Check if it's a valid number
+            if (!/^\d+$/.test(amount)) {
+              setError(fieldName, {
+                type: 'manual',
+                message: 'Please enter a valid number'
+              })
+              hasErrors = true
+            } else if (parseInt(amount) <= 0) {
+              setError(fieldName, {
+                type: 'manual',
+                message: 'Amount must be greater than 0'
+              })
+              hasErrors = true
+            }
+          }
+        })
+      })
+
+      // If there are validation errors, stop submission
+      if (hasErrors) {
+        return
+      }
+
       // Transform platforms data to match the API format
       const collaborationCosts: CollaborationCostsPayload = {}
-  
+
       platforms.forEach(platform => {
         // Convert 'x' to 'twitter' for API compatibility
         const platformKey: PlatformKey = (platform.id === 'x' ? 'twitter' : platform.id) as PlatformKey
-        
+
         // Validate platform key
         if (!['instagram', 'youtube', 'facebook', 'linkedin', 'twitter'].includes(platformKey)) {
           console.warn(`Invalid platform key: ${platformKey}`)
           return
         }
-  
+
         const platformCosts: PlatformContentCosts = {}
-  
+
         platform.contentTypes.forEach(contentType => {
           // Map content type IDs to match API expectations
           let contentKey = contentType.id
-          
+
           // Handle special mappings
           if (contentKey === 'long-video') {
-            contentKey = 'video' // YouTube long video maps to 'video'
+            contentKey = 'longVideo' // YouTube long video maps to 'video'
           } else if (contentKey === 'short' && platformKey === 'youtube') {
-            contentKey = 'shorts' // YouTube short maps to 'shorts'
+            contentKey = 'short' // YouTube short maps to 'shorts'
           }
-  
+
           // Only add if amount is provided and is a valid number
           const amount = parseInt(contentType.amount)
           if (contentType.amount && !isNaN(amount) && amount > 0) {
@@ -283,7 +327,7 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
             platformCosts[contentKey as keyof PlatformContentCosts] = amount
           }
         })
-  
+
         // Only add platform if it has content types with amounts
         if (Object.keys(platformCosts).length > 0) {
           collaborationCosts[platformKey] = platformCosts
@@ -307,20 +351,7 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
         }
       })
   
-      console.log('Submitting collaboration costs:', params.toString())
-  
-      const response = await updateCollaborationCharge(Object.fromEntries(params.entries()))
-  
-      console.log('API Response:', response)
-  
-      // Refetch user data to get updated collaboration costs
-      if (refetchUser) {
-        await refetchUser()
-      }
-  
-      if (onClose) {
-        onClose()
-      }
+      await updateCollaborationCharge(Object.fromEntries(params.entries()))
     } catch (error) {
       console.error('Error saving collaboration charges:', error)
     }
@@ -352,36 +383,53 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
 
             {/* Content Types */}
             <div className="space-y-3">
-              {platform.contentTypes.map((contentType) => (
-                <div
-                  key={contentType.id}
-                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 relative">
-                      <Image
-                        src={platform.icon}
-                        alt={platform.name}
-                        width={32}
-                        height={32}
-                        className="object-contain"
-                      />
-                    </div>
-                    <span className="font-medium text-black">{contentType.name}</span>
-                  </div>
+              {platform.contentTypes.map((contentType) => {
+                const fieldName = `${platform.id}-${contentType.id}`
+                const fieldError = errors[fieldName]
 
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-400">|</span>
-                    <input
-                      type="text"
-                      placeholder="Add Amount"
-                      value={contentType.amount}
-                      onChange={(e) => handleAmountChange(platform.id, contentType.id, e.target.value)}
-                      className="w-32 text-right text-gray-400 placeholder:text-gray-400 focus:outline-none focus:text-black"
-                    />
+                return (
+                  <div key={contentType.id}>
+                    <div
+                      className={`flex items-center justify-between p-4 bg-white border rounded-lg ${
+                        fieldError ? 'border-red-500' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 relative">
+                          <Image
+                            src={platform.icon}
+                            alt={platform.name}
+                            width={32}
+                            height={32}
+                            className="object-contain"
+                          />
+                        </div>
+                        <span className="font-medium text-black">{contentType.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-400">|</span>
+                        <input
+                          type="text"
+                          placeholder="Add Amount"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={contentType.amount}
+                          onChange={(e) => handleAmountChange(platform.id, contentType.id, e.target.value)}
+                          className={`w-32 text-right placeholder:text-gray-400 focus:outline-none ${
+                            fieldError ? 'text-red-500' : 'text-gray-400 focus:text-black'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                    {fieldError && (
+                      <p className="text-red-500 text-xs mt-1 ml-1">
+                        {fieldError.message as string}
+                      </p>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
@@ -396,18 +444,13 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
 
           {/* Platform Icons */}
           <div className="flex items-center justify-center gap-4">
-            {morePlatforms.map((platform) => {
-              const isAdded = platforms.some(p => p.id === platform.id)
-              return (
+            {morePlatforms
+              .filter(platform => !platforms.some(p => p.id === platform.id))
+              .map((platform) => (
                 <button
                   key={platform.id}
                   onClick={() => handleAddPlatform(platform.id)}
-                  disabled={isAdded}
-                  className={`w-12 h-12 rounded-lg bg-white border flex items-center justify-center transition-colors ${
-                    isAdded
-                      ? 'border-blue-500 bg-blue-50 cursor-not-allowed opacity-50'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className="w-12 h-12 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors"
                 >
                   <Image
                     src={platform.icon}
@@ -417,8 +460,7 @@ const EditCollaborationChargesScreen = ({ onClose }: EditCollaborationChargesScr
                     className="object-contain"
                   />
                 </button>
-              )
-            })}
+              ))}
           </div>
         </div>
       </div>

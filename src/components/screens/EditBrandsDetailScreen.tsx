@@ -155,7 +155,7 @@ const EditBrandsDetailScreen = () => {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex flex-col items-center mt-6 px-4 pb-32 space-y-6">
-          <div className="w-full max-w-sm">
+          <div className="w-full">
             {/* Brand Headquarter Location */}
             <div>
               <h3 className="font-semibold text-black mb-3">Brand Headquarter Location*</h3>

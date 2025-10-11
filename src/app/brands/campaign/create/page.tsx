@@ -11,6 +11,7 @@ import { Influencer } from '@/types/influencer.interface'
 import { ChevronDown, Mars, Search, Venus, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Deliverable {
   platform: 'instagram' | 'facebook' | 'youtube' | 'linkedin' | 'twitter'
@@ -62,6 +63,7 @@ const CreateCampaignPage = () => {
   const [selectedInfluencers, setSelectedInfluencers] = useState<Influencer[]>([])
   const [campaignId, setCampaignId] = useState<number | undefined>(undefined)
   const [brandNiches, setBrandNiches] = useState<{ id: string; name: string; description: string; }[]>([])
+  const router = useRouter();
 
   const {user} = useAuthContext();
 
@@ -601,7 +603,7 @@ const CreateCampaignPage = () => {
   }
 
   const ProgressIndicator = () => (
-    <div className="w-full max-w-sm mb-8">
+    <div className="w-full mb-8">
       <div className="flex items-center justify-between">
         <div className="flex flex-col items-center">
           <span className={`text-sm font-extrabold mt-1 ${currentStep === 9 ? 'text-[#999]' : 'text-blue-500'}`}>Create</span>
@@ -626,7 +628,7 @@ const CreateCampaignPage = () => {
   )
 
   const CampaignSummary = ({ showDeliverable = false }: { showDeliverable?: boolean }) => (
-    <div className="w-full max-w-sm mb-8">
+    <div className="w-full mb-8">
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 bg-black rounded-full flex items-center overflow-hidden justify-center relative">
           <Image src={user?.profileMedia?.profileImage ?? "/default.png"} alt="Brand Logo" fill className='object-cover'/>
@@ -648,7 +650,7 @@ const CreateCampaignPage = () => {
       <div className="flex flex-col justify-start flex-1 px-4 py-8">
         {/* Progress Indicator */}
         {showSuccessscreen ? (
-          <SuccessfulScreen heading="Campaign Created" subHeading="Your campaign has been created successfully" onBack={() => setShowSuccessscreen(false)}/>
+          <SuccessfulScreen heading="Campaign Created" subHeading="Your campaign has been created successfully" onBack={() => router.push("/brands/me")}/>
         ) : showInviteScreen ? (
           <InviteInfluencersScreen
             selectedInfluencers={selectedInfluencers}
@@ -696,7 +698,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Form Fields */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               {/* Campaign Name Field */}
               <div>
                 <label className="font-bold text-black">
@@ -761,7 +763,7 @@ const CreateCampaignPage = () => {
             <CampaignSummary />
 
             {/* Deliverable Format Section */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-black mb-4">Deliverable Format</h2>
                 <div className="relative">
@@ -812,7 +814,7 @@ const CreateCampaignPage = () => {
             <CampaignSummary showDeliverable={true} />
 
             {/* Campaign Description Section */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-black mb-4">Campaign Description</h2>
                 <div className="relative">
@@ -867,7 +869,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Preferences Form */}
-            <div className="w-full max-w-sm space-y-8">
+            <div className="w-full space-y-8">
               {/* Age Preference Section */}
               <div>
                 <h3 className="font-bold text-black mb-4">Have Any Age preference?</h3>
@@ -995,7 +997,7 @@ const CreateCampaignPage = () => {
               </div>
 
               {/* custom influencer requirements */}
-              <div className="w-full max-w-sm space-y-6 pb-24">
+              <div className="w-full space-y-6 pb-24">
                 <div>
                   <h2 className="text-lg font-bold text-black mb-4">Add Custom Influencer Requirements</h2>
                   <div className="relative">
@@ -1043,7 +1045,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="w-full max-w-sm mb-6">
+            <div className="w-full mb-6">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -1079,7 +1081,7 @@ const CreateCampaignPage = () => {
 
             {/* Selected Cities Section */}
             {selectedCities.length > 0 && !panIndiaSelected && (
-              <div className="w-full max-w-sm mb-6">
+              <div className="w-full mb-6">
                 <h3 className="text-lg font-bold text-black mb-4">Selected Cities</h3>
                 <div className="flex flex-wrap gap-3">
                   {selectedCities.map((cityId) => {
@@ -1103,7 +1105,7 @@ const CreateCampaignPage = () => {
             )}
 
             {/* Popular Cities Section */}
-            <div className="w-full max-w-sm mb-8">
+            <div className="w-full mb-8">
               <h3 className="text-lg font-bold text-black mb-4">Popular Cities</h3>
               <div className="flex flex-wrap gap-3">
                 {cities
@@ -1127,7 +1129,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Pan-India Option */}
-            <div className="w-full max-w-sm mb-8">
+            <div className="w-full mb-8">
               <div className="flex items-center justify-center gap-3">
                 <label htmlFor="panIndia" className="text-sm font-bold text-black">
                   I want to run this campaign Pan-India
@@ -1173,7 +1175,7 @@ const CreateCampaignPage = () => {
               </h1>
             </div>
 
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
                 {errors.collaborationCosts && (
                   <p className="text-red-500 text-xs">{errors.collaborationCosts}</p>
                 )}
@@ -1455,7 +1457,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Performance Expectations Form */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               <div className="relative">
                 <textarea
                   placeholder="Add Deliverable"
@@ -1507,7 +1509,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Brand Support Form */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               <div className="relative">
                 <textarea
                   placeholder="Add Deliverable"
@@ -1552,7 +1554,7 @@ const CreateCampaignPage = () => {
           /* Step 9: Review Campaign */
           <>
             {/* Review Campaign Content */}
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full space-y-6">
               {/* Title */}
               <div className="text-left mb-6">
                 <h1 className="font-extrabold text-black">
@@ -1838,7 +1840,7 @@ const CreateCampaignPage = () => {
           /* Step 10: Post Campaign */
           <>
             {/* Campaign Summary */}
-            <div className="w-full max-w-sm mb-8">
+            <div className="w-full mb-8">
               <div className="flex items-start gap-4">
                 <div className="relative w-12 h-12 bg-black rounded-full flex items-center justify-center">
                   <Image src={user?.profileMedia?.profileImage ?? '/default-avatar.png'} alt="Brand Logo" fill className='object-cover'/>
@@ -1853,7 +1855,7 @@ const CreateCampaignPage = () => {
             </div>
 
             {/* Post Campaign Options */}
-            <div className="w-full max-w-sm space-y-3 mb-12">
+            <div className="w-full space-y-3 mb-12">
               <div className="text-center mb-8">
                 <h2 className="font-extrabold text-black">Post this campaign as</h2>
               </div>

@@ -61,8 +61,8 @@ interface Country {
   }
 
   interface YoutubeCosts {
-    video?: number;
-    shorts?: number;
+    longVideo?: number;
+    short?: number;
   }
 
   interface LinkedinCosts {

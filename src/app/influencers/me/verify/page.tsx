@@ -30,8 +30,8 @@ interface VerifyInfluencerFormData {
       story: number | null
     }
     youtube: {
-      video: number | null
-      shorts: number | null
+      longVideo: number | null
+      short: number | null
     }
     linkedin: {
       post: number | null
@@ -150,8 +150,8 @@ const VerifyInfluencerPage = () => {
           story: null
         },
         youtube: {
-          video: null,
-          shorts: null
+          longVideo: null,
+          short: null
         },
         linkedin: {
           post: null,
@@ -248,10 +248,10 @@ const VerifyInfluencerPage = () => {
           setValue("collaborationCosts.facebook.story", costs.facebook.story || null)
         }
 
-        if (costs.youtube && (costs.youtube.video || costs.youtube.shorts)) {
+        if (costs.youtube && (costs.youtube.longVideo || costs.youtube.short)) {
           activePlatforms.push('youtube')
-          setValue("collaborationCosts.youtube.video", costs.youtube.video || null)
-          setValue("collaborationCosts.youtube.shorts", costs.youtube.shorts || null)
+          setValue("collaborationCosts.youtube.longVideo", costs.youtube.longVideo || null)
+          setValue("collaborationCosts.youtube.short", costs.youtube.short || null)
         }
 
         if (costs.linkedin && (costs.linkedin.post || costs.linkedin.article)) {
@@ -469,8 +469,8 @@ const VerifyInfluencerPage = () => {
         }
 
         if (collaborationPlatforms.includes('youtube')) {
-          payload.append('collaborationCosts[youtube][video]', formData.collaborationCosts.youtube.video?.toString() || '')
-          payload.append('collaborationCosts[youtube][shorts]', formData.collaborationCosts.youtube.shorts?.toString() || '')
+          payload.append('collaborationCosts[youtube][video]', formData.collaborationCosts.youtube.longVideo?.toString() || '')
+          payload.append('collaborationCosts[youtube][shorts]', formData.collaborationCosts.youtube.short?.toString() || '')
         }
 
         if (collaborationPlatforms.includes('linkedin')) {

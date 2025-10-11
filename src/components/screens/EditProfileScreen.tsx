@@ -200,7 +200,7 @@ const EditProfileScreen = ({ onClose }: EditProfileScreenProps) => {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex flex-col items-center mt-6 px-4 pb-32 space-y-12">
-            <div className="w-full max-w-sm">
+            <div className="w-full">
                 <div>
                     <h3 className="font-semibold text-black mb-4">Add Profile Banner*</h3>
                     {watchedBannerImage ? (

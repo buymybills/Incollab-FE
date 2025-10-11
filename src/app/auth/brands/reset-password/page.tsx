@@ -132,7 +132,7 @@ const BrandsResetPassword = () => {
 
       {/* Main Content */}
       <div className="flex-1 bg-white px-4 py-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
           {/* Add Password */}
           <div>
@@ -223,7 +223,7 @@ const BrandsResetPassword = () => {
 
       {/* Continue Button - Fixed at bottom */}
       <div className="fixed bottom-6 w-full px-4">
-        <div className="max-w-md mx-auto">
+        <div className="">
           <ArrowFilledButton
             text={resetPasswordLoading ? "Changing Password..." : "Submit Password"}
             textCenter={true}

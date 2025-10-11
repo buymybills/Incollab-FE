@@ -48,7 +48,7 @@ const SignInPage = () => {
   return (
     <div className="min-h-screen md:flex">
       {/* Mobile Layout */}
-      <div className="md:hidden w-full text-center h-screen flex flex-col items-center justify-around px-4 mx-auto" style={{backgroundImage: 'url(/images/bg/signin-landing-page-bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
+      <div className="w-full text-center h-screen flex flex-col items-center justify-around px-4 mx-auto" style={{backgroundImage: 'url(/images/bg/signin-landing-page-bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
       <div className="flex items-center justify-center h-80 w-80 relative mt-36 mobile-image overflow-hidden">
         <Image
           src={images[currentImageIndex]}
@@ -121,7 +121,7 @@ const SignInPage = () => {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex w-full max-w-5xl mx-auto h-[549px] my-auto">
+      <div className="hidden w-full max-w-5xl mx-auto h-[549px] my-auto">
         {/* Left Side - Hero Section */}
         <div className="bg-[#D9D9D9] flex items-start justify-start">
           <div className="max-w-md p-6">
